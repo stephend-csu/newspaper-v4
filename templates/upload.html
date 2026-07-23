@@ -150,8 +150,8 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <h1>Upload Page</h1>
       <div class="nav-links">
-        <a href="/">Main Map Page</a>
-        <a href="/confirm">Confirmation Screen</a>
+        <a href="https://stephend-csu.github.io/newspaper-v4/">Main Map Page</a>
+        <a href="/confirmation">Confirmation Screen</a>
       </div>
     </div>
     <div class="subtitle">Upload your delivery route PDF to extract addresses and compute optimized routes.</div>
@@ -245,7 +245,7 @@
           localStorage.setItem('extracted_route_data', JSON.stringify(data));
           
           setTimeout(() => {
-            window.location.href = '/confirm';
+            window.location.href = '/confirmation';
           }, 1000);
         }
       })

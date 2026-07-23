@@ -310,8 +310,8 @@
     <header>
       <h1>Confirmation Screen</h1>
       <div class="nav-links">
-        <a href="upload.html">← Back to Upload</a>
-        <a href="index.html">Main Map Page</a>
+        <a href="https://newspaper-v4.onrender.com/">← Upload Page</a>
+        <a href="https://stephend-csu.github.io/newspaper-v4/">Main Map Page</a>
       </div>
     </header>
 
@@ -397,7 +397,7 @@
       problem_addresses: []
     };
 
-    let selectedItems = new Set(); // Stores string keys like "valid_0", "prob_1"
+    let selectedItems = new Set();
 
     window.addEventListener('DOMContentLoaded', () => {
       const stored = localStorage.getItem('extracted_route_data');
@@ -591,7 +591,6 @@
         let targetList = section === 'prob' ? routeData.problem_addresses : routeData.valid_addresses;
         if (targetList && targetList[index]) {
           let currentAddr = targetList[index].full_address || targetList[index].raw_address;
-          // Extract street part before city comma
           let streetPart = currentAddr.split(',')[0].trim();
           targetList[index].full_address = `${streetPart}, ${targetCity}, CA`;
           targetList[index].city = targetCity;
@@ -640,10 +639,13 @@
       modal.style.display = 'flex';
       statusText.textContent = 'Initiating background route optimization...';
 
+      const notRouted = (routeData.problem_addresses || []).map(item => item.full_address || item.raw_address);
+
       const payload = {
         confirmed_valid_addresses: routeData.valid_addresses,
         unconfirmed_count: routeData.problem_addresses ? routeData.problem_addresses.length : 0,
-        newspaper_counts: routeData.newspaper_counts || {}
+        newspaper_counts: routeData.newspaper_counts || {},
+        not_routed_addresses: notRouted
       };
 
       fetch('/api/process-route', {
@@ -679,7 +681,7 @@
               clearInterval(interval);
               statusText.textContent = 'Route completed and uploaded to GitHub! Redirecting to main map...';
               setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = 'https://stephend-csu.github.io/newspaper-v4/';
               }, 1200);
             } else if (data.status === 'error') {
               clearInterval(interval);

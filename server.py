@@ -14,14 +14,12 @@ app = Flask(__name__, template_folder='templates', static_folder='.')
 JOB_STATUSES = {}
 
 @app.route('/')
-def main_page():
-    return send_from_directory('.', 'index.html')
-
 @app.route('/upload')
 @app.route('/upload.html')
 def upload_page():
     return send_from_directory('.', 'upload.html')
 
+@app.route('/confirmation')
 @app.route('/confirm')
 @app.route('/confirm.html')
 def confirm_page():
@@ -67,7 +65,7 @@ def api_geocode_suggest():
     suggestions = suggest_addresses(query)
     return jsonify({'suggestions': suggestions})
 
-def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, newspaper_counts):
+def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, newspaper_counts, not_routed_addresses=None):
     try:
         JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Optimizing road route...'}
         
@@ -86,7 +84,8 @@ def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, new
             'addresses_found': len(confirmed_addresses),
             'addresses_not_found': unconfirmed_count,
             'newspaper_counts': newspaper_counts,
-            'total_stops': len(route_waypoints)
+            'total_stops': len(route_waypoints),
+            'not_routed_addresses': not_routed_addresses or []
         }
         
         # 4. Sync with GitHub
@@ -116,6 +115,7 @@ def api_process_route():
     confirmed = data.get('confirmed_valid_addresses', [])
     unconfirmed_count = data.get('unconfirmed_count', 0)
     newspaper_counts = data.get('newspaper_counts', {})
+    not_routed = data.get('not_routed_addresses', [])
     
     if not confirmed:
         return jsonify({'error': 'No valid addresses provided for routing'}), 400
@@ -123,10 +123,9 @@ def api_process_route():
     job_id = str(uuid.uuid4())
     JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Job started...'}
     
-    # Launch background thread to bypass Render.com's 100-second timeout limit
     thread = threading.Thread(
         target=run_route_processing_job,
-        args=(job_id, confirmed, unconfirmed_count, newspaper_counts)
+        args=(job_id, confirmed, unconfirmed_count, newspaper_counts, not_routed)
     )
     thread.daemon = True
     thread.start()

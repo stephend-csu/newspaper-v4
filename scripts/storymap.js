@@ -195,6 +195,7 @@ $(window).on('load', function() {
 
     var foundCount = metadata ? metadata.addresses_found : chapters.length;
     var notFoundCount = metadata ? metadata.addresses_not_found : 0;
+    var notRoutedList = (metadata && metadata.not_routed_addresses) ? metadata.not_routed_addresses : [];
 
     var statsCard = $('<div class="special-card-container"></div>');
     statsCard.append('<div class="card-title"><i class="fa fa-list-check"></i> Address Resolution Summary</div>');
@@ -210,11 +211,26 @@ $(window).on('load', function() {
         </div>
       </div>
     `);
+
+    if (notRoutedList && notRoutedList.length > 0) {
+      var notRoutedHtml = '<div class="not-routed-container">';
+      notRoutedHtml += '<div class="not-routed-title"><i class="fa fa-exclamation-triangle"></i> Not Routed Addresses (' + notRoutedList.length + '):</div>';
+      notRoutedHtml += '<ul class="not-routed-list">';
+      notRoutedList.forEach(function(addr) {
+        notRoutedHtml += '<li>' + addr + '</li>';
+      });
+      notRoutedHtml += '</ul></div>';
+      statsCard.append(notRoutedHtml);
+    } else {
+      statsCard.append('<div class="not-routed-container"><div class="not-routed-title" style="color:#38a169;"><i class="fa fa-check-circle"></i> All extracted addresses successfully routed!</div></div>');
+    }
+
     statsContainer.append(statsCard);
     $('#contents').append(statsContainer);
 
     // -------------------------------------------------------------
     // Address Containers (containers 2, 3, ...)
+    // Address 1 corresponds to container 2, Address 2 to container 3, etc.
     // -------------------------------------------------------------
     var markers = [null, null];
     var chapterCount = 0;
@@ -222,6 +238,7 @@ $(window).on('load', function() {
     for (var idx = 0; idx < chapters.length; idx++) {
       var c = chapters[idx];
       var containerIdx = idx + 2;
+      var addressNum = idx + 1; // First address is 1.
 
       if (!isNaN(parseFloat(c['Latitude'])) && !isNaN(parseFloat(c['Longitude']))) {
         var lat = parseFloat(c['Latitude']);
@@ -251,7 +268,7 @@ $(window).on('load', function() {
       var streetNameClean = cleanStreetAddress(c['Chapter']);
       var mapsUrl = c['Maps Link'] || (c['Chapter'] ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c['Chapter'])}` : '#');
 
-      var headerHtml = `<p class="chapter-header"><a href="${mapsUrl}" target="_blank" class="street-addr-link">${streetNameClean}</a></p>`;
+      var headerHtml = `<p class="chapter-header"><span class="addr-num">${addressNum}.</span><a href="${mapsUrl}" target="_blank" class="street-addr-link">${streetNameClean}</a></p>`;
       
       var papersStr = c['Newspapers'] || '';
       var paperBadgesHtml = '';
@@ -272,8 +289,8 @@ $(window).on('load', function() {
         milesHtml = `<div class="miles-to-next"><i class="fa fa-flag-checkered"></i> Start Location</div>`;
       }
 
-      // Subtle grayscale button with downward facing triangle
-      var nextBtnHtml = `<button type="button" class="btn-next-address" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})">▼</button>`;
+      // Cuter grayscale button with downward facing triangle
+      var nextBtnHtml = `<button type="button" class="btn-next-address" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})" title="Advance to next address"><span class="cute-triangle">▾</span></button>`;
 
       container
         .append(headerHtml)
@@ -294,7 +311,7 @@ $(window).on('load', function() {
     });
 
     window.handleNextAddressClick = function(btnElem, targetIdx) {
-      $(btnElem).addClass('pushed').html('▼ ✓');
+      $(btnElem).addClass('pushed').html('<span class="cute-triangle">▾</span> ✓');
       var targetDiv = $('#container' + targetIdx);
       if (targetDiv.length) {
         $('#contents').animate({
@@ -323,7 +340,13 @@ $(window).on('load', function() {
 
       for (var i = 0; i < pixelsAbove.length - 1; i++) {
         if (currentPosition >= pixelsAbove[i] && currentPosition < (pixelsAbove[i+1] - 2 * chapterContainerMargin) && currentlyInFocus != i) {
-          location.hash = i + 1;
+          if (i === 0) {
+            location.hash = 'colors';
+          } else if (i === 1) {
+            location.hash = 'summary';
+          } else {
+            location.hash = i - 1; // Address 1 is #1, Address 2 is #2
+          }
 
           $('.chapter-container').removeClass("in-focus").addClass("out-focus");
           $('div#container' + i).addClass("in-focus").removeClass("out-focus");
@@ -397,11 +420,20 @@ $(window).on('load', function() {
     $('div#container0').addClass("in-focus");
     $('div#contents').animate({scrollTop: '1px'});
 
-    if (parseInt(location.hash.substr(1))) {
-      var containerId = parseInt(location.hash.substr(1)) - 1;
-      if ($('#container' + containerId).length) {
+    var hashVal = location.hash.substr(1);
+    if (hashVal) {
+      var targetContainerId = -1;
+      if (hashVal === 'colors') {
+        targetContainerId = 0;
+      } else if (hashVal === 'summary') {
+        targetContainerId = 1;
+      } else if (!isNaN(parseInt(hashVal))) {
+        targetContainerId = parseInt(hashVal) + 1; // #1 -> container2
+      }
+
+      if (targetContainerId >= 0 && $('#container' + targetContainerId).length) {
         $('#contents').animate({
-          scrollTop: $('#container' + containerId).offset().top
+          scrollTop: $('#container' + targetContainerId).offset().top
         }, 1500);
       }
     }

@@ -225,32 +225,74 @@ h2 {
   font-weight: 500;
 }
 
+.addr-num {
+  color: #718096;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
 .btn-next-address {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #e2e8f0;
+  gap: 4px;
+  background: linear-gradient(180deg, #ffffff 0%, #edf2f7 100%);
   color: #4a5568;
   border: 1px solid #cbd5e0;
-  border-radius: 4px;
-  padding: 6px 16px;
+  border-radius: 20px;
+  padding: 5px 18px;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  transition: all 0.2s ease-in-out;
   margin-top: 6px;
 }
 
 .btn-next-address:hover {
-  background-color: #cbd5e0;
+  background: #e2e8f0;
   color: #1a202c;
+  transform: translateY(1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
 .btn-next-address.pushed {
-  background-color: #a0aec0;
-  color: #1a202c;
-  border-color: #718096;
+  background: #e2e8f0;
+  color: #718096;
+  border-color: #cbd5e0;
+}
+
+.cute-triangle {
+  font-size: 1.15rem;
+  line-height: 1;
+  color: #4a5568;
+}
+
+.not-routed-container {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #edf2f7;
+  text-align: left;
+}
+
+.not-routed-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #e53e3e;
+  margin-bottom: 8px;
+}
+
+.not-routed-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+  color: #4a5568;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.not-routed-list li {
+  margin-bottom: 4px;
 }
 
 /* Div 1 & Div 2 Card Layouts */

@@ -166,26 +166,16 @@
     </div>
 
     <div class="api-section">
-      <h2>APIs Used & Architecture Overview</h2>
+      <h2>Address APIs Overview</h2>
       
       <div class="api-card">
-        <div class="api-name">1. PyPDF & Regex Extractor</div>
-        <div class="api-desc">Parses unstructured text stream from uploaded PDF files. Identifies street name headers and extracts house numbers along with newspaper tags (EBT, WSJ, SFC, NYT, UST, WLD, STD).</div>
+        <div class="api-name">1. OpenStreetMap Nominatim & Census Geocoder API</div>
+        <div class="api-desc">Resolves delivery street addresses against official public geographic databases to determine geographic coordinates (latitude and longitude) and verify candidate cities in Contra Costa County, CA.</div>
       </div>
 
       <div class="api-card">
-        <div class="api-name">2. OpenStreetMap Nominatim & Census Geocode API</div>
-        <div class="api-desc">Validates extracted street addresses against official public data in Contra Costa County, CA. Identifies matching cities (Walnut Creek, Concord, Pleasant Hill, etc.) for addresses provided without a city.</div>
-      </div>
-
-      <div class="api-card">
-        <div class="api-name">3. OSRM (Open Source Routing Machine) API</div>
-        <div class="api-desc">Solves the Traveling Salesperson Problem (TSP) using real road network graph routing. Pins the starting address at 2505 Dean Lesher Dr, Concord, CA, permits free U-turns, and calculates leg distances in miles.</div>
-      </div>
-
-      <div class="api-card">
-        <div class="api-name">4. GitHub REST API & Asynchronous Worker</div>
-        <div class="api-desc">Executes heavy route optimization in a background thread to bypass Render's 100-second request timeout limit. Automatically commits updated Chapters.csv and metadata.json to your GitHub repository.</div>
+        <div class="api-name">2. OSRM (Open Source Routing Machine) API</div>
+        <div class="api-desc">Computes real-world road network driving distances between delivery addresses, solves Traveling Salesperson Problem (TSP) address ordering starting from 2505 Dean Lesher Dr, Concord, CA, and calculates driving leg miles between addresses.</div>
       </div>
     </div>
   </div>
@@ -252,7 +242,6 @@
           statusMsg.style.color = '#51cf66';
           statusMsg.textContent = `Extracted ${data.total_extracted} addresses! Redirecting to Confirmation Screen...`;
           
-          // Store extracted data in localStorage for Confirmation Screen
           localStorage.setItem('extracted_route_data', JSON.stringify(data));
           
           setTimeout(() => {

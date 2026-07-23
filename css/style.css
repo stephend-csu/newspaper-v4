@@ -187,11 +187,15 @@ h2 {
 .street-addr-link {
   font-weight: bold;
   font-size: 1.25rem;
-  color: #1a202c;
+  color: #2b6cb0;
   text-decoration: underline;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 200;
 }
 .street-addr-link:hover {
-  color: #3182ce;
+  color: #1a365d;
 }
 
 .newspapers-row {
@@ -217,34 +221,36 @@ h2 {
   font-size: 0.9rem;
   color: #4a5568;
   margin-top: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-weight: 500;
 }
 
 .btn-next-address {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background-color: #3182ce;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 18px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  justify-content: center;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   transition: all 0.2s ease;
   margin-top: 6px;
 }
 
 .btn-next-address:hover {
-  background-color: #2b6cb0;
+  background-color: #cbd5e0;
+  color: #1a202c;
 }
 
 .btn-next-address.pushed {
-  background-color: #38a169;
-  color: #ffffff;
+  background-color: #a0aec0;
+  color: #1a202c;
+  border-color: #718096;
 }
 
 /* Div 1 & Div 2 Card Layouts */

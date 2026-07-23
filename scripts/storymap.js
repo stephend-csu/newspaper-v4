@@ -3,10 +3,10 @@ $(window).on('load', function() {
 
   const CHAPTER_ZOOM = 15;
 
-  // Default newspaper colors
   var newspaperColors = {
     'EBT': '#e63946',
     'WSJ': '#6c757d',
+    'CAP': '#457b9d',
     'NYT': '#0077b6',
     'SFC': '#f4a261',
     'UST': '#2a9d8f',
@@ -14,7 +14,6 @@ $(window).on('load', function() {
     'STD': '#e76f51'
   };
 
-  // Cache-busting with current timestamp down to millisecond
   var timestamp = Date.now();
 
   $.get('csv/Options.csv?time=' + timestamp, function(options) {
@@ -98,7 +97,7 @@ $(window).on('load', function() {
     var styleStr = '';
     Object.keys(newspaperColors).forEach(paper => {
       var color = newspaperColors[paper];
-      var bgLight = hexToLightRgba(color, 0.15);
+      var bgLight = hexToLightRgba(color, 0.18);
       styleStr += `.np-badge-${paper.toLowerCase()} { background-color: ${bgLight} !important; color: ${color} !important; border-color: ${color} !important; }\n`;
     });
     $('#newspaper-dynamic-styles').remove();
@@ -108,7 +107,6 @@ $(window).on('load', function() {
   function cleanStreetAddress(fullAddr) {
     if (!fullAddr) return '';
     var streetPart = fullAddr.split(',')[0].trim();
-    // Convert to Title Case
     return streetPart.replace(/\w\S*/g, function(txt) {
       return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     });
@@ -142,7 +140,6 @@ $(window).on('load', function() {
       L.control.zoom({ position: getSetting('_zoomControls') }).addTo(map);
     }
 
-    // Collect all unique detected newspapers
     var detectedNewspapers = new Set();
     chapters.forEach(c => {
       if (c['Newspapers']) {
@@ -152,13 +149,13 @@ $(window).on('load', function() {
       }
     });
     if (detectedNewspapers.size === 0) {
-      ['EBT', 'WSJ', 'NYT', 'SFC'].forEach(p => detectedNewspapers.add(p));
+      ['EBT', 'WSJ', 'CAP', 'NYT', 'SFC'].forEach(p => detectedNewspapers.add(p));
     }
 
     updateNewspaperBadgeStyles();
 
     // -------------------------------------------------------------
-    // DIV 1: Mobile-friendly Newspaper Color Picker (replaces container0)
+    // DIV 1: Color Picker
     // -------------------------------------------------------------
     var colorPickerContainer = $('<div></div>', {
       id: 'container0',
@@ -189,7 +186,7 @@ $(window).on('load', function() {
     $('#contents').append(colorPickerContainer);
 
     // -------------------------------------------------------------
-    // DIV 2: Addresses Found vs Not Found Stats (replaces container1)
+    // DIV 2: Address Resolution Summary ("Not Routed / Included")
     // -------------------------------------------------------------
     var statsContainer = $('<div></div>', {
       id: 'container1',
@@ -209,7 +206,7 @@ $(window).on('load', function() {
         </div>
         <div class="stat-box not-found">
           <div class="stat-val">${notFoundCount}</div>
-          <div class="stat-lbl">Not Found / Problem</div>
+          <div class="stat-lbl">Not Routed / Included</div>
         </div>
       </div>
     `);
@@ -219,12 +216,12 @@ $(window).on('load', function() {
     // -------------------------------------------------------------
     // Address Containers (containers 2, 3, ...)
     // -------------------------------------------------------------
-    var markers = [null, null]; // Offset for special containers 0 and 1
+    var markers = [null, null];
     var chapterCount = 0;
 
     for (var idx = 0; idx < chapters.length; idx++) {
       var c = chapters[idx];
-      var containerIdx = idx + 2; // Offset by 2 for color picker & stats divs
+      var containerIdx = idx + 2;
 
       if (!isNaN(parseFloat(c['Latitude'])) && !isNaN(parseFloat(c['Longitude']))) {
         var lat = parseFloat(c['Latitude']);
@@ -256,7 +253,6 @@ $(window).on('load', function() {
 
       var headerHtml = `<p class="chapter-header"><a href="${mapsUrl}" target="_blank" class="street-addr-link">${streetNameClean}</a></p>`;
       
-      // Newspaper badges
       var papersStr = c['Newspapers'] || '';
       var paperBadgesHtml = '';
       if (papersStr.trim()) {
@@ -268,7 +264,6 @@ $(window).on('load', function() {
         paperBadgesHtml += '</div>';
       }
 
-      // Miles to next address
       var milesVal = c['Miles to Next'] || c['Description'] || '';
       var milesHtml = '';
       if (milesVal && !isNaN(parseFloat(milesVal))) {
@@ -277,8 +272,8 @@ $(window).on('load', function() {
         milesHtml = `<div class="miles-to-next"><i class="fa fa-flag-checkered"></i> Start Location</div>`;
       }
 
-      // Mobile friendly button to scroll to next address
-      var nextBtnHtml = `<button type="button" class="btn-next-address" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})">Next Address <i class="fa fa-arrow-down"></i></button>`;
+      // Subtle grayscale button with downward facing triangle
+      var nextBtnHtml = `<button type="button" class="btn-next-address" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})">▼</button>`;
 
       container
         .append(headerHtml)
@@ -289,8 +284,17 @@ $(window).on('load', function() {
       $('#contents').append(container);
     }
 
+    // Ensure hyperlink click always opens Google Maps
+    $(document).off('click', '.street-addr-link').on('click', '.street-addr-link', function(e) {
+      e.stopPropagation();
+      var href = $(this).attr('href');
+      if (href && href !== '#') {
+        window.open(href, '_blank');
+      }
+    });
+
     window.handleNextAddressClick = function(btnElem, targetIdx) {
-      $(btnElem).addClass('pushed').html('Pushed <i class="fa fa-check"></i>');
+      $(btnElem).addClass('pushed').html('▼ ✓');
       var targetDiv = $('#container' + targetIdx);
       if (targetDiv.length) {
         $('#contents').animate({
@@ -301,7 +305,6 @@ $(window).on('load', function() {
 
     changeAttribution();
 
-    // Scroll calculation across all container elements (0, 1, 2, ...)
     var totalDivs = chapters.length + 2;
     var pixelsAbove = [];
     pixelsAbove[0] = -100;
@@ -328,7 +331,6 @@ $(window).on('load', function() {
           currentlyInFocus = i;
           markActiveColor(currentlyInFocus);
 
-          // Fly to marker if valid
           if (markers[i]) {
             var m = markers[i];
             map.flyTo(m.getLatLng(), CHAPTER_ZOOM, { animate: true, duration: 2 });

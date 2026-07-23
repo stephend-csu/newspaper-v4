@@ -12,9 +12,10 @@
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f4f6f9;
-      color: #333333;
+      background-color: #121417;
+      color: #e2e8f0;
       padding: 30px 20px;
+      min-height: 100vh;
     }
     .container {
       max-width: 960px;
@@ -25,15 +26,18 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
+      border-bottom: 1px solid #2d3748;
+      padding-bottom: 16px;
     }
     h1 {
       font-size: 2.2rem;
-      color: #1a202c;
+      color: #ffffff;
       font-weight: 700;
+      letter-spacing: -0.5px;
     }
     .nav-links a {
       margin-left: 16px;
-      color: #3182ce;
+      color: #63b3ed;
       text-decoration: none;
       font-weight: 600;
     }
@@ -43,17 +47,19 @@
     
     /* Newspaper Summary Cards */
     .summary-card {
-      background: white;
+      background: #1e2227;
+      border: 1px solid #2d3748;
       border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       margin-bottom: 24px;
     }
     .summary-title {
       font-weight: 700;
-      font-size: 1.1rem;
-      color: #2d3748;
+      font-size: 1.05rem;
+      color: #cbd5e0;
       margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .summary-grid {
       display: flex;
@@ -61,16 +67,16 @@
       gap: 12px;
     }
     .paper-badge {
-      background: #edf2f7;
+      background: #2d3748;
       border-radius: 6px;
       padding: 8px 14px;
       font-weight: 600;
       font-size: 0.95rem;
-      color: #2b6cb0;
+      color: #63b3ed;
       display: flex;
       align-items: center;
       gap: 8px;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+      border: 1px solid #4a5568;
     }
     .paper-badge .count {
       background: #3182ce;
@@ -82,36 +88,37 @@
 
     /* Sections */
     .section-card {
-      background: white;
+      background: #1e2227;
+      border: 1px solid #2d3748;
       border-radius: 8px;
       padding: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       margin-bottom: 24px;
     }
     .section-header {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      color: #ffffff;
     }
     .problem-header {
-      color: #e53e3e;
+      color: #fc8181;
     }
     .valid-header {
-      color: #2f855a;
+      color: #68d391;
     }
 
     /* Technical Blurb */
     .technical-blurb {
-      background: #fff5f5;
-      border-left: 4px solid #e53e3e;
+      background: #252a31;
+      border-left: 3px solid #718096;
       padding: 12px 16px;
       border-radius: 4px;
       font-size: 0.88rem;
-      color: #742a2a;
-      margin-bottom: 16px;
+      color: #a0aec0;
+      margin-bottom: 18px;
       line-height: 1.5;
     }
 
@@ -122,8 +129,8 @@
       gap: 12px;
     }
     .address-item {
-      background: #f7fafc;
-      border: 1px solid #e2e8f0;
+      background: #17191d;
+      border: 1px solid #2d3748;
       border-radius: 6px;
       padding: 14px;
       display: flex;
@@ -137,27 +144,24 @@
       gap: 12px;
       flex-wrap: wrap;
     }
-    .address-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: #2d3748;
-      flex: 1;
-    }
     .address-num {
       color: #718096;
       font-size: 0.95rem;
+      font-weight: 700;
       min-width: 25px;
     }
     .input-edit {
+      background: #262b33;
+      color: #ffffff;
       padding: 8px 12px;
-      border: 1px solid #cbd5e0;
+      border: 1px solid #4a5568;
       border-radius: 4px;
       font-size: 0.95rem;
-      flex: 1;
       width: 100%;
+    }
+    .input-edit:focus {
+      outline: none;
+      border-color: #63b3ed;
     }
     .btn-group {
       display: flex;
@@ -176,7 +180,7 @@
       opacity: 0.88;
     }
     .btn-valid {
-      background: #48bb78;
+      background: #38a169;
       color: white;
     }
     .btn-invalid {
@@ -197,6 +201,7 @@
     /* Auto-suggest dropdown */
     .suggest-box {
       position: relative;
+      flex: 1;
       width: 100%;
     }
     .suggest-dropdown {
@@ -204,10 +209,10 @@
       top: 100%;
       left: 0;
       right: 0;
-      background: white;
-      border: 1px solid #cbd5e0;
+      background: #262b33;
+      border: 1px solid #4a5568;
       border-radius: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
       z-index: 100;
       max-height: 180px;
       overflow-y: auto;
@@ -217,16 +222,18 @@
       padding: 8px 12px;
       cursor: pointer;
       font-size: 0.9rem;
+      color: #e2e8f0;
     }
     .suggest-item:hover {
-      background: #edf2f7;
+      background: #3a424e;
+      color: #ffffff;
     }
 
     /* Modal */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.8);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -234,7 +241,8 @@
       display: none;
     }
     .modal-box {
-      background: white;
+      background: #1e2227;
+      border: 1px solid #2d3748;
       border-radius: 8px;
       padding: 30px;
       max-width: 450px;
@@ -242,8 +250,8 @@
       text-align: center;
     }
     .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3182ce;
+      border: 4px solid #2d3748;
+      border-top: 4px solid #63b3ed;
       border-radius: 50%;
       width: 40px;
       height: 40px;
@@ -270,7 +278,7 @@
     <div class="summary-card">
       <div class="summary-title">Total Newspaper Count (Valid & Problem Addresses)</div>
       <div class="summary-grid" id="newspaperGrid">
-        <div style="color:#718096;">No newspaper data loaded. Upload a PDF first.</div>
+        <div style="color:#a0aec0;">No newspaper data loaded. Upload a PDF first.</div>
       </div>
     </div>
 
@@ -282,11 +290,11 @@
       
       <div class="technical-blurb">
         <strong>Technical Address Validation Methodology:</strong><br>
-        Addresses extracted from the PDF do not include city names. The system attempts to resolve each street address against public OpenStreetMap and Census databases across Contra Costa County cities (Walnut Creek, Concord, Pleasant Hill, Lafayette, Danville, etc.). Addresses below were flagged because they either could not be matched uniquely or matched multiple cities. Please review or edit the address line before marking valid.
+        Addresses extracted from the PDF do not include city names. The system attempts to resolve each street address against public OpenStreetMap and Census databases across Contra Costa County cities. Addresses below were flagged for manual review. All addresses are fully editable with live auto-suggest.
       </div>
 
       <div class="address-list" id="problemList">
-        <div style="color:#718096; padding: 10px;">No problem addresses found. All addresses validated cleanly!</div>
+        <div style="color:#a0aec0; padding: 10px;">No problem addresses found. All addresses validated cleanly!</div>
       </div>
     </div>
 
@@ -297,7 +305,7 @@
       </div>
 
       <div class="address-list" id="validList">
-        <div style="color:#718096; padding: 10px;">No valid addresses loaded.</div>
+        <div style="color:#a0aec0; padding: 10px;">No valid addresses loaded.</div>
       </div>
     </div>
 
@@ -309,9 +317,9 @@
   <!-- Progress Modal -->
   <div class="modal-overlay" id="progressModal">
     <div class="modal-box">
-      <h3 style="margin-bottom:10px;">Processing Delivery Route</h3>
+      <h3 style="margin-bottom:10px; color:#fff;">Processing Delivery Route</h3>
       <div class="spinner"></div>
-      <p id="modalStatusText" style="color:#4a5568; font-size:0.95rem;">Optimizing road driving route via OSRM...</p>
+      <p id="modalStatusText" style="color:#a0aec0; font-size:0.95rem;">Optimizing road driving route via OSRM...</p>
     </div>
   </div>
 
@@ -322,7 +330,6 @@
       problem_addresses: []
     };
 
-    // Load state from localStorage on page load
     window.addEventListener('DOMContentLoaded', () => {
       const stored = localStorage.getItem('extracted_route_data');
       if (stored) {
@@ -345,10 +352,9 @@
       const grid = document.getElementById('newspaperGrid');
       grid.innerHTML = '';
       const counts = routeData.newspaper_counts || {};
-      
       const keys = Object.keys(counts);
       if (keys.length === 0) {
-        grid.innerHTML = '<div style="color:#718096;">No newspaper data available.</div>';
+        grid.innerHTML = '<div style="color:#a0aec0;">No newspaper data available.</div>';
         return;
       }
 
@@ -369,7 +375,7 @@
       countSpan.textContent = list.length;
 
       if (list.length === 0) {
-        container.innerHTML = '<div style="color:#718096; padding:8px;">No problem addresses found.</div>';
+        container.innerHTML = '<div style="color:#a0aec0; padding:8px;">No problem addresses present.</div>';
         return;
       }
 
@@ -385,16 +391,16 @@
             <span class="address-num">${num}.</span>
             <div class="suggest-box">
               <input type="text" class="input-edit" value="${item.full_address || item.raw_address}" 
-                     oninput="handleSuggest(this, ${index})" id="prob_input_${index}" />
-              <div class="suggest-dropdown" id="suggest_drop_${index}"></div>
+                     oninput="handleSuggest(this, 'prob_${index}', ${index}, 'problem')" id="prob_input_${index}" />
+              <div class="suggest-dropdown" id="suggest_drop_prob_${index}"></div>
             </div>
             <div class="btn-group">
               <button class="btn btn-valid" onclick="markProblemAsValid(${index})">Mark Valid</button>
               <button class="btn btn-invalid" onclick="markProblemAsInvalid(${index})">Mark Invalid</button>
             </div>
           </div>
-          <div style="font-size:0.85rem; color:#718096;">
-            <strong>Newspapers:</strong> ${papers} &nbsp;|&nbsp; <strong>Reason:</strong> ${item.reason || 'Unverified'}
+          <div style="font-size:0.85rem; color:#a0aec0;">
+            <strong>Newspapers:</strong> ${papers}
           </div>
         `;
         container.appendChild(div);
@@ -410,7 +416,7 @@
       countSpan.textContent = list.length;
 
       if (list.length === 0) {
-        container.innerHTML = '<div style="color:#718096; padding:8px;">No valid addresses present.</div>';
+        container.innerHTML = '<div style="color:#a0aec0; padding:8px;">No valid addresses present.</div>';
         return;
       }
 
@@ -424,13 +430,17 @@
         div.innerHTML = `
           <div class="address-row">
             <span class="address-num">${num}.</span>
-            <div class="address-info">${item.full_address || item.raw_address}</div>
+            <div class="suggest-box">
+              <input type="text" class="input-edit" value="${item.full_address || item.raw_address}" 
+                     oninput="handleSuggest(this, 'valid_${index}', ${index}, 'valid')" id="valid_input_${index}" />
+              <div class="suggest-dropdown" id="suggest_drop_valid_${index}"></div>
+            </div>
             <div class="btn-group">
               <button class="btn btn-invalid" onclick="markValidAsInvalid(${index})">Mark Invalid</button>
             </div>
           </div>
-          <div style="font-size:0.85rem; color:#718096;">
-            <strong>Newspapers:</strong> ${papers} &nbsp;|&nbsp; <strong>City:</strong> ${item.city || 'Walnut Creek'}
+          <div style="font-size:0.85rem; color:#a0aec0;">
+            <strong>Newspapers:</strong> ${papers}
           </div>
         `;
         container.appendChild(div);
@@ -440,37 +450,39 @@
     function markProblemAsValid(index) {
       const inputVal = document.getElementById(`prob_input_${index}`).value.trim();
       const item = routeData.problem_addresses.splice(index, 1)[0];
-      
       item.full_address = inputVal;
-      if (!item.full_address.includes('CA')) {
-        item.full_address += ', CA';
-      }
-      
-      // Move to top of valid section
       routeData.valid_addresses.unshift(item);
       saveState();
       renderAll();
     }
 
     function markProblemAsInvalid(index) {
-      // Remove problem address
       routeData.problem_addresses.splice(index, 1);
       saveState();
       renderAll();
     }
 
     function markValidAsInvalid(index) {
+      const inputVal = document.getElementById(`valid_input_${index}`).value.trim();
       const item = routeData.valid_addresses.splice(index, 1)[0];
-      item.reason = 'Manually marked invalid by user';
-      // Move to top of problem section
+      item.full_address = inputVal;
       routeData.problem_addresses.unshift(item);
       saveState();
       renderAll();
     }
 
-    function handleSuggest(inputElem, index) {
-      const drop = document.getElementById(`suggest_drop_${index}`);
+    function handleSuggest(inputElem, dropKey, index, section) {
+      const drop = document.getElementById(`suggest_drop_${dropKey}`);
       const val = inputElem.value;
+
+      // Update data model immediately on edit
+      if (section === 'problem' && routeData.problem_addresses[index]) {
+        routeData.problem_addresses[index].full_address = val;
+      } else if (section === 'valid' && routeData.valid_addresses[index]) {
+        routeData.valid_addresses[index].full_address = val;
+      }
+      saveState();
+
       if (val.length < 3) {
         drop.style.display = 'none';
         return;
@@ -487,6 +499,12 @@
               itemDiv.textContent = sug;
               itemDiv.onclick = () => {
                 inputElem.value = sug;
+                if (section === 'problem' && routeData.problem_addresses[index]) {
+                  routeData.problem_addresses[index].full_address = sug;
+                } else if (section === 'valid' && routeData.valid_addresses[index]) {
+                  routeData.valid_addresses[index].full_address = sug;
+                }
+                saveState();
                 drop.style.display = 'none';
               };
               drop.appendChild(itemDiv);
@@ -504,6 +522,14 @@
     }
 
     function submitConfirmedRoute() {
+      // Sync all current input values before submission
+      if (routeData.valid_addresses) {
+        routeData.valid_addresses.forEach((item, idx) => {
+          const el = document.getElementById(`valid_input_${idx}`);
+          if (el && el.value) item.full_address = el.value.trim();
+        });
+      }
+
       if (!routeData.valid_addresses || routeData.valid_addresses.length === 0) {
         alert('Please ensure there is at least one valid address before generating route.');
         return;

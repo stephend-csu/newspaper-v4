@@ -64,63 +64,56 @@ def geocode_address_candidate(address_str):
 def validate_and_classify_addresses(address_items):
     """
     Takes list of dicts with 'raw_address' and 'newspapers'.
-    Categorizes into valid_addresses and problem_addresses.
+    Fast local classification to ensure instant response on PDF upload.
+    Categorizes into valid_addresses and problem_addresses based on address format and city resolution.
     """
     valid_list = []
     problem_list = []
+    
+    import re
     
     for item in address_items:
         raw_addr = item['raw_address'].strip()
         papers = item['newspapers']
         
-        # Check if city already present
-        has_city = any(c.lower() in raw_addr.lower() for c in CONTRA_COSTA_CITIES)
-        
-        matching_cities = []
-        best_geo = None
-        
-        if has_city:
-            geo = geocode_address_candidate(f"{raw_addr}, CA")
-            if geo:
-                best_geo = geo
-                matching_cities.append(geo['city'])
-        else:
-            # Test default candidate Walnut Creek first, as many addresses in this route are in Walnut Creek
-            for city in ['Walnut Creek', 'Concord', 'Pleasant Hill', 'Lafayette']:
-                full_test = f"{raw_addr}, {city}, CA"
-                geo = geocode_address_candidate(full_test)
-                if geo and ('Contra Costa' in geo.get('county', '') or geo.get('city') in CONTRA_COSTA_CITIES):
-                    matching_cities.append(geo.get('city', city))
-                    if not best_geo:
-                        best_geo = geo
-                        
-        if len(matching_cities) == 1 or (best_geo and has_city):
-            city_name = matching_cities[0] if matching_cities else best_geo.get('city', 'Walnut Creek')
-            
-            # Format clean full address e.g. "3104 Perra Way, Walnut Creek, CA"
-            if not has_city:
-                clean_full = f"{raw_addr}, {city_name}, CA"
-            else:
-                clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"
+        # Check if city already present in string
+        found_city = None
+        for c in CONTRA_COSTA_CITIES:
+            if c.lower() in raw_addr.lower():
+                found_city = c
+                break
                 
-            valid_list.append({
-                'raw_address': raw_addr,
-                'full_address': clean_full,
-                'city': city_name,
-                'newspapers': papers,
-                'lat': best_geo['lat'] if best_geo else None,
-                'lon': best_geo['lon'] if best_geo else None
-            })
-        else:
-            # Problem address (not found or multiple matches)
-            possible_cities = list(set(matching_cities)) if matching_cities else ['Walnut Creek', 'Concord', 'Pleasant Hill']
+        # Validate house number and street structure
+        has_number = bool(re.match(r'^\d+', raw_addr))
+        words = raw_addr.split()
+        has_street = len(words) >= 2
+        
+        if not has_number or not has_street:
             problem_list.append({
                 'raw_address': raw_addr,
-                'full_address': f"{raw_addr}, {possible_cities[0]}, CA",
-                'possible_cities': possible_cities,
+                'full_address': f"{raw_addr}, Walnut Creek, CA",
+                'possible_cities': ['Walnut Creek', 'Concord'],
                 'newspapers': papers,
-                'reason': 'Multiple city matches found in Contra Costa County' if len(possible_cities) > 1 else 'Address not found in official Contra Costa County data'
+                'reason': 'Malformed address string (missing house number or street)'
             })
+            continue
+            
+        city_name = found_city or 'Walnut Creek'
+        
+        # Format full address string
+        if found_city:
+            clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"
+        else:
+            clean_full = f"{raw_addr}, {city_name}, CA"
+            
+        valid_list.append({
+            'raw_address': raw_addr,
+            'full_address': clean_full,
+            'city': city_name,
+            'newspapers': papers,
+            'lat': None,
+            'lon': None
+        })
             
     return valid_list, problem_list
 

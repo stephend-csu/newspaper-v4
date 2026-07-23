@@ -174,3 +174,163 @@ h2 {
   font-size: 1.1em;
   font-weight: normal;
 }
+
+/* Delivery Route Custom Components */
+.upload-pst-header {
+  font-size: 0.85rem;
+  color: #666;
+  text-align: center;
+  padding: 4px 0 8px 0;
+  font-weight: 500;
+}
+
+.street-addr-link {
+  font-weight: bold;
+  font-size: 1.25rem;
+  color: #1a202c;
+  text-decoration: underline;
+}
+.street-addr-link:hover {
+  color: #3182ce;
+}
+
+.newspapers-row {
+  margin: 10px 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.np-badge {
+  font-weight: bold;
+  font-size: 0.95rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.miles-to-next {
+  font-size: 0.9rem;
+  color: #4a5568;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.btn-next-address {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.btn-next-address:hover {
+  background-color: #2b6cb0;
+}
+
+.btn-next-address.pushed {
+  background-color: #38a169;
+  color: #ffffff;
+}
+
+/* Div 1 & Div 2 Card Layouts */
+.special-card-container {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin: 15px 20px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  text-align: center;
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #2d3748;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.color-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f7fafc;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #edf2f7;
+}
+
+.picker-item label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #2d3748;
+}
+
+.picker-item input[type="color"] {
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+}
+
+.stats-grid {
+  display: flex;
+  justify-content: space-around;
+  gap: 15px;
+}
+
+.stat-box {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.stat-box.found {
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  color: #22543d;
+}
+
+.stat-box.not-found {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  color: #742a2a;
+}
+
+.stat-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.stat-lbl {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+

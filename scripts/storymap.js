@@ -1,57 +1,62 @@
 $(window).on('load', function() {
   var documentSettings = {};
 
-  // Some constants, such as default settings
   const CHAPTER_ZOOM = 15;
 
-  // First, try reading Options.csv
-  $.get('csv/Options.csv', function(options) {
+  // Default newspaper colors
+  var newspaperColors = {
+    'EBT': '#e63946',
+    'WSJ': '#6c757d',
+    'NYT': '#0077b6',
+    'SFC': '#f4a261',
+    'UST': '#2a9d8f',
+    'WLD': '#9c27b0',
+    'STD': '#e76f51'
+  };
 
-    $.get('csv/Chapters.csv', function(chapters) {
-      initMap(
-        $.csv.toObjects(options),
-        $.csv.toObjects(chapters)
-      )
-    }).fail(function(e) { alert('Found Options.csv, but could not read Chapters.csv') });
+  // Cache-busting with current timestamp down to millisecond
+  var timestamp = Date.now();
 
-  // If not available, try from the Google Sheet
+  $.get('csv/Options.csv?time=' + timestamp, function(options) {
+    $.get('csv/Chapters.csv?time=' + timestamp, function(chapters) {
+      $.getJSON('csv/metadata.json?time=' + timestamp, function(metadata) {
+        initMap(
+          $.csv.toObjects(options),
+          $.csv.toObjects(chapters),
+          metadata
+        );
+      }).fail(function() {
+        initMap(
+          $.csv.toObjects(options),
+          $.csv.toObjects(chapters),
+          null
+        );
+      });
+    }).fail(function(e) { alert('Found Options.csv, but could not read Chapters.csv'); });
   }).fail(function(e) {
-
     var parse = function(res) {
-      return Papa.parse(Papa.unparse(res[0].values), {header: true} ).data;
-    }
+      return Papa.parse(Papa.unparse(res[0].values), {header: true}).data;
+    };
 
-    // First, try reading data from the Google Sheet
     if (typeof googleDocURL !== 'undefined' && googleDocURL) {
-
       if (typeof googleApiKey !== 'undefined' && googleApiKey) {
-
-        var apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
+        var apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/';
         var spreadsheetId = googleDocURL.split('/d/')[1].split('/')[0];
 
         $.when(
           $.getJSON(apiUrl + spreadsheetId + '/values/Options?key=' + googleApiKey),
           $.getJSON(apiUrl + spreadsheetId + '/values/Chapters?key=' + googleApiKey),
         ).then(function(options, chapters) {
-          initMap(parse(options), parse(chapters))
-        })
-
+          initMap(parse(options), parse(chapters), null);
+        });
       } else {
-        alert('You load data from a Google Sheet, you need to add a free Google API key')
+        alert('You load data from a Google Sheet, you need to add a free Google API key');
       }
-
     } else {
-      alert('You need to specify a valid Google Sheet (googleDocURL)')
+      alert('You need to specify a valid Google Sheet (googleDocURL)');
     }
+  });
 
-  })
-
-
-
-  /**
-  * Reformulates documentSettings as a dictionary, e.g.
-  * {"webpageTitle": "Leaflet Boilerplate", "infoPopupText": "Stuff"}
-  */
   function createDocumentSettings(settings) {
     for (var i in settings) {
       var setting = settings[i];
@@ -59,35 +64,20 @@ $(window).on('load', function() {
     }
   }
 
-  /**
-   * Returns the value of a setting s
-   * getSetting(s) is equivalent to documentSettings[constants.s]
-   */
   function getSetting(s) {
     return documentSettings[constants[s]];
   }
 
-  /**
-   * Returns the value of setting named s from constants.js
-   * or def if setting is either not set or does not exist
-   * Both arguments are strings
-   * e.g. trySetting('_authorName', 'No Author')
-   */
   function trySetting(s, def) {
     s = getSetting(s);
     if (!s || s.trim() === '') { return def; }
     return s;
   }
 
-  /**
-   * Loads the basemap and adds it to the map
-   */
   function addBaseMap() {
     var basemap = trySetting('_tileProvider', 'Stamen.TonerLite');
     L.tileLayer.provider(basemap, {
       maxZoom: 18,
-      
-      // Pass the api key to most commonly used parameters
       apiKey: trySetting('_tileProviderApiKey', ''),
       apikey: trySetting('_tileProviderApiKey', ''),
       key: trySetting('_tileProviderApiKey', ''),
@@ -95,16 +85,49 @@ $(window).on('load', function() {
     }).addTo(map);
   }
 
-  function initMap(options, chapters) {
-    createDocumentSettings(options);
+  function hexToLightRgba(hex, alpha) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    var r = parseInt(hex.substring(0, 2), 16) || 0;
+    var g = parseInt(hex.substring(2, 4), 16) || 0;
+    var b = parseInt(hex.substring(4, 6), 16) || 0;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
 
+  function updateNewspaperBadgeStyles() {
+    var styleStr = '';
+    Object.keys(newspaperColors).forEach(paper => {
+      var color = newspaperColors[paper];
+      var bgLight = hexToLightRgba(color, 0.15);
+      styleStr += `.np-badge-${paper.toLowerCase()} { background-color: ${bgLight} !important; color: ${color} !important; border-color: ${color} !important; }\n`;
+    });
+    $('#newspaper-dynamic-styles').remove();
+    $('<style id="newspaper-dynamic-styles">').text(styleStr).appendTo('head');
+  }
+
+  function cleanStreetAddress(fullAddr) {
+    if (!fullAddr) return '';
+    var streetPart = fullAddr.split(',')[0].trim();
+    // Convert to Title Case
+    return streetPart.replace(/\w\S*/g, function(txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  }
+
+  function initMap(options, chapters, metadata) {
+    createDocumentSettings(options);
     var chapterContainerMargin = 70;
 
     document.title = getSetting('_mapTitle');
     $('#header').append('<h1>' + (getSetting('_mapTitle') || '') + '</h1>');
     $('#header').append('<h2>' + (getSetting('_mapSubtitle') || '') + '</h2>');
 
-    // Add logo
+    if (metadata && metadata.upload_timestamp_pst) {
+      $('#header').append('<div class="upload-pst-header"><i class="fa fa-clock"></i> Uploaded to GitHub: ' + metadata.upload_timestamp_pst + '</div>');
+    } else {
+      $('#header').append('<div class="upload-pst-header"><i class="fa fa-clock"></i> Uploaded: Recent (PST)</div>');
+    }
+
     if (getSetting('_mapLogo')) {
       $('#logo').append('<img src="' + getSetting('_mapLogo') + '" />');
       $('#top').css('height', '60px');
@@ -113,286 +136,218 @@ $(window).on('load', function() {
       $('#header').css('padding-top', '25px');
     }
 
-    // Load tiles
     addBaseMap();
 
-    // Add zoom controls if needed
     if (getSetting('_zoomControls') !== 'off') {
-      L.control.zoom({
-        position: getSetting('_zoomControls')
-      }).addTo(map);
+      L.control.zoom({ position: getSetting('_zoomControls') }).addTo(map);
     }
 
-    var markers = [];
-
-    var markActiveColor = function(k) {
-      /* Removes marker-active class from all markers */
-      for (var i = 0; i < markers.length; i++) {
-        if (markers[i] && markers[i]._icon) {
-          markers[i]._icon.className = markers[i]._icon.className.replace(' marker-active', '');
-
-          if (i == k) {
-            /* Adds marker-active class, which is orange, to marker k */
-            markers[k]._icon.className += ' marker-active';
-          }
-        }
+    // Collect all unique detected newspapers
+    var detectedNewspapers = new Set();
+    chapters.forEach(c => {
+      if (c['Newspapers']) {
+        c['Newspapers'].split(/\s+/).forEach(p => {
+          if (p.trim()) detectedNewspapers.add(p.trim().toUpperCase());
+        });
       }
+    });
+    if (detectedNewspapers.size === 0) {
+      ['EBT', 'WSJ', 'NYT', 'SFC'].forEach(p => detectedNewspapers.add(p));
     }
 
-    var pixelsAbove = [];
+    updateNewspaperBadgeStyles();
+
+    // -------------------------------------------------------------
+    // DIV 1: Mobile-friendly Newspaper Color Picker (replaces container0)
+    // -------------------------------------------------------------
+    var colorPickerContainer = $('<div></div>', {
+      id: 'container0',
+      class: 'chapter-container in-focus'
+    });
+
+    var pickerCard = $('<div class="special-card-container"></div>');
+    pickerCard.append('<div class="card-title"><i class="fa fa-palette"></i> Newspaper Color Options</div>');
+    var pickerGrid = $('<div class="color-picker-grid"></div>');
+
+    Array.from(detectedNewspapers).forEach(paper => {
+      var color = newspaperColors[paper] || '#4a5568';
+      newspaperColors[paper] = color;
+      
+      var item = $('<div class="picker-item"></div>');
+      item.append(`<label for="picker_${paper}">${paper}</label>`);
+      var input = $(`<input type="color" id="picker_${paper}" value="${color}">`);
+      input.on('input change', function() {
+        var newColor = $(this).val();
+        newspaperColors[paper] = newColor;
+        updateNewspaperBadgeStyles();
+      });
+      item.append(input);
+      pickerGrid.append(item);
+    });
+    pickerCard.append(pickerGrid);
+    colorPickerContainer.append(pickerCard);
+    $('#contents').append(colorPickerContainer);
+
+    // -------------------------------------------------------------
+    // DIV 2: Addresses Found vs Not Found Stats (replaces container1)
+    // -------------------------------------------------------------
+    var statsContainer = $('<div></div>', {
+      id: 'container1',
+      class: 'chapter-container out-focus'
+    });
+
+    var foundCount = metadata ? metadata.addresses_found : chapters.length;
+    var notFoundCount = metadata ? metadata.addresses_not_found : 0;
+
+    var statsCard = $('<div class="special-card-container"></div>');
+    statsCard.append('<div class="card-title"><i class="fa fa-list-check"></i> Address Resolution Summary</div>');
+    statsCard.append(`
+      <div class="stats-grid">
+        <div class="stat-box found">
+          <div class="stat-val">${foundCount}</div>
+          <div class="stat-lbl">Addresses Found</div>
+        </div>
+        <div class="stat-box not-found">
+          <div class="stat-val">${notFoundCount}</div>
+          <div class="stat-lbl">Not Found / Problem</div>
+        </div>
+      </div>
+    `);
+    statsContainer.append(statsCard);
+    $('#contents').append(statsContainer);
+
+    // -------------------------------------------------------------
+    // Address Containers (containers 2, 3, ...)
+    // -------------------------------------------------------------
+    var markers = [null, null]; // Offset for special containers 0 and 1
     var chapterCount = 0;
 
-    var currentlyInFocus; // integer to specify each chapter is currently in focus
-    var overlay;  // URL of the overlay for in-focus chapter
-    var geoJsonOverlay;
+    for (var idx = 0; idx < chapters.length; idx++) {
+      var c = chapters[idx];
+      var containerIdx = idx + 2; // Offset by 2 for color picker & stats divs
 
-    for (i in chapters) {
-      var c = chapters[i];
-
-      if ( !isNaN(parseFloat(c['Latitude'])) && !isNaN(parseFloat(c['Longitude']))) {
+      if (!isNaN(parseFloat(c['Latitude'])) && !isNaN(parseFloat(c['Longitude']))) {
         var lat = parseFloat(c['Latitude']);
         var lon = parseFloat(c['Longitude']);
-
         chapterCount += 1;
 
         markers.push(
           L.marker([lat, lon], {
             icon: L.ExtraMarkers.icon({
               icon: 'fa-number',
-              number: c['Marker'] === 'Numbered'
-                ? chapterCount
-                : (c['Marker'] === 'Plain'
-                  ? ''
-                  : c['Marker']), 
+              number: c['Marker'] === 'Numbered' ? chapterCount : (c['Marker'] === 'Plain' ? '' : c['Marker']),
               markerColor: c['Marker Color'] || 'blue'
             }),
             opacity: c['Marker'] === 'Hidden' ? 0 : 0.9,
             interactive: c['Marker'] === 'Hidden' ? false : true,
-          }
-        ));
-
+          })
+        );
       } else {
         markers.push(null);
       }
 
-      // Add chapter container
       var container = $('<div></div>', {
-        id: 'container' + i,
-        class: 'chapter-container'
+        id: 'container' + containerIdx,
+        class: 'chapter-container out-focus'
       });
 
+      var streetNameClean = cleanStreetAddress(c['Chapter']);
+      var mapsUrl = c['Maps Link'] || (c['Chapter'] ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c['Chapter'])}` : '#');
 
-      // Add media and credits: YouTube, audio, or image
-      var media = null;
-      var mediaContainer = null;
-
-      // Add media source
-      var source = '';
-      if (c['Media Credit Link']) {
-        source = $('<a>', {
-          text: c['Media Credit'],
-          href: c['Media Credit Link'],
-          target: "_blank",
-          class: 'source'
+      var headerHtml = `<p class="chapter-header"><a href="${mapsUrl}" target="_blank" class="street-addr-link">${streetNameClean}</a></p>`;
+      
+      // Newspaper badges
+      var papersStr = c['Newspapers'] || '';
+      var paperBadgesHtml = '';
+      if (papersStr.trim()) {
+        paperBadgesHtml = '<div class="newspapers-row">';
+        papersStr.trim().split(/\s+/).forEach(p => {
+          var paperCode = p.toUpperCase();
+          paperBadgesHtml += `<span class="np-badge np-badge-${paperCode.toLowerCase()}" data-paper="${paperCode}">${paperCode}</span>`;
         });
-      } else {
-        source = $('<span>', {
-          text: c['Media Credit'],
-          class: 'source'
-        });
+        paperBadgesHtml += '</div>';
       }
 
-      // YouTube
-      if (c['Media Link'] && c['Media Link'].indexOf('youtube.com/') > -1) {
-        media = $('<iframe></iframe>', {
-          src: c['Media Link'],
-          width: '100%',
-          height: '100%',
-          frameborder: '0',
-          allow: 'autoplay; encrypted-media',
-          allowfullscreen: 'allowfullscreen',
-        });
-
-        mediaContainer = $('<div></div>', {
-          class: 'img-container'
-        }).append(media).after(source);
+      // Miles to next address
+      var milesVal = c['Miles to Next'] || c['Description'] || '';
+      var milesHtml = '';
+      if (milesVal && !isNaN(parseFloat(milesVal))) {
+        milesHtml = `<div class="miles-to-next"><i class="fa fa-car"></i> ${parseFloat(milesVal).toFixed(1)} miles to next stop</div>`;
+      } else if (c['Description'] && c['Description'].toLowerCase().includes('start')) {
+        milesHtml = `<div class="miles-to-next"><i class="fa fa-flag-checkered"></i> Start Location</div>`;
       }
 
-      // If not YouTube: either audio or image
-      var mediaTypes = {
-        'jpg': 'img',
-        'jpeg': 'img',
-        'png': 'img',
-        'tiff': 'img',
-        'gif': 'img',
-        'mp3': 'audio',
-        'ogg': 'audio',
-        'wav': 'audio',
-      }
-
-      var mediaExt = c['Media Link'] ? c['Media Link'].split('.').pop().toLowerCase() : '';
-      var mediaType = mediaTypes[mediaExt];
-
-      if (mediaType) {
-        media = $('<' + mediaType + '>', {
-          src: c['Media Link'],
-          controls: mediaType === 'audio' ? 'controls' : '',
-          alt: c['Chapter']
-        });
-
-        var enableLightbox = getSetting('_enableLightbox') === 'yes' ? true : false;
-        if (enableLightbox && mediaType === 'img') {
-          var lightboxWrapper = $('<a></a>', {
-            'data-lightbox': c['Media Link'],
-            'href': c['Media Link'],
-            'data-title': c['Chapter'],
-            'data-alt': c['Chapter'],
-          });
-          media = lightboxWrapper.append(media);
-        }
-
-        mediaContainer = $('<div></div', {
-          class: mediaType + '-container'
-        }).append(media).after(source);
-      }
+      // Mobile friendly button to scroll to next address
+      var nextBtnHtml = `<button type="button" class="btn-next-address" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})">Next Address <i class="fa fa-arrow-down"></i></button>`;
 
       container
-        .append('<p class="chapter-header">' + c['Chapter'] + '</p>')
-        .append(media ? mediaContainer : '')
-        .append(media ? source : '')
-        .append('<p class="description">' + c['Description'] + '</p>');
+        .append(headerHtml)
+        .append(paperBadgesHtml)
+        .append(milesHtml)
+        .append(nextBtnHtml);
 
       $('#contents').append(container);
-
     }
+
+    window.handleNextAddressClick = function(btnElem, targetIdx) {
+      $(btnElem).addClass('pushed').html('Pushed <i class="fa fa-check"></i>');
+      var targetDiv = $('#container' + targetIdx);
+      if (targetDiv.length) {
+        $('#contents').animate({
+          scrollTop: targetDiv.offset().top + $('#contents').scrollTop() - 100
+        }, 500);
+      }
+    };
 
     changeAttribution();
 
-    /* Change image container heights */
-    imgContainerHeight = parseInt(getSetting('_imgContainerHeight'));
-    if (imgContainerHeight > 0) {
-      $('.img-container').css({
-        'height': imgContainerHeight + 'px',
-        'max-height': imgContainerHeight + 'px',
-      });
-    }
-
-    // For each block (chapter), calculate how many pixels above it
+    // Scroll calculation across all container elements (0, 1, 2, ...)
+    var totalDivs = chapters.length + 2;
+    var pixelsAbove = [];
     pixelsAbove[0] = -100;
-    for (i = 1; i < chapters.length; i++) {
+    for (var i = 1; i < totalDivs; i++) {
       pixelsAbove[i] = pixelsAbove[i-1] + $('div#container' + (i-1)).height() + chapterContainerMargin;
     }
     pixelsAbove.push(Number.MAX_VALUE);
 
+    var currentlyInFocus = 0;
     $('div#contents').scroll(function() {
       var currentPosition = $(this).scrollTop();
 
-      // Make title disappear on scroll
       if (currentPosition < 200) {
         $('#title').css('opacity', 1 - Math.min(1, currentPosition / 100));
       }
 
       for (var i = 0; i < pixelsAbove.length - 1; i++) {
-
-        if ( currentPosition >= pixelsAbove[i]
-          && currentPosition < (pixelsAbove[i+1] - 2 * chapterContainerMargin)
-          && currentlyInFocus != i
-        ) {
-
-          // Update URL hash
+        if (currentPosition >= pixelsAbove[i] && currentPosition < (pixelsAbove[i+1] - 2 * chapterContainerMargin) && currentlyInFocus != i) {
           location.hash = i + 1;
 
-          // Remove styling for the old in-focus chapter and
-          // add it to the new active chapter
           $('.chapter-container').removeClass("in-focus").addClass("out-focus");
           $('div#container' + i).addClass("in-focus").removeClass("out-focus");
 
           currentlyInFocus = i;
           markActiveColor(currentlyInFocus);
 
-          // Remove overlay tile layer if needed
-          if (overlay && map.hasLayer(overlay)) {
-            map.removeLayer(overlay);
+          // Fly to marker if valid
+          if (markers[i]) {
+            var m = markers[i];
+            map.flyTo(m.getLatLng(), CHAPTER_ZOOM, { animate: true, duration: 2 });
           }
-
-          // Remove GeoJson Overlay tile layer if needed
-          if (geoJsonOverlay && map.hasLayer(geoJsonOverlay)) {
-            map.removeLayer(geoJsonOverlay);
-          }
-
-          var c = chapters[i];
-
-          // Add chapter's overlay tiles if specified in options
-          if (c['Overlay']) {
-
-            var opacity = parseFloat(c['Overlay Transparency']) || 1;
-            var url = c['Overlay'];
-
-            if (url.split('.').pop() === 'geojson') {
-              $.getJSON(url, function(geojson) {
-                overlay = L.geoJson(geojson, {
-                  style: function(feature) {
-                    return {
-                      fillColor: feature.properties.fillColor || '#ffffff',
-                      weight: feature.properties.weight || 1,
-                      opacity: feature.properties.opacity || opacity,
-                      color: feature.properties.color || '#cccccc',
-                      fillOpacity: feature.properties.fillOpacity || 0.5,
-                    }
-                  }
-                }).addTo(map);
-              });
-            } else {
-              overlay = L.tileLayer(c['Overlay'], { opacity: opacity }).addTo(map);
-            }
-
-          }
-
-          if (c['GeoJSON Overlay']) {
-            $.getJSON(c['GeoJSON Overlay'], function(geojson) {
-
-              // Parse properties string into a JS object
-              var props = {};
-
-              if (c['GeoJSON Feature Properties']) {
-                var propsArray = c['GeoJSON Feature Properties'].split(';');
-                var props = {};
-                for (var p in propsArray) {
-                  if (propsArray[p].split(':').length === 2) {
-                    props[ propsArray[p].split(':')[0].trim() ] = propsArray[p].split(':')[1].trim();
-                  }
-                }
-              }
-
-              geoJsonOverlay = L.geoJson(geojson, {
-                style: function(feature) {
-                  return {
-                    fillColor: feature.properties.fillColor || props.fillColor || '#ffffff',
-                    weight: feature.properties.weight || props.weight || 1,
-                    opacity: feature.properties.opacity || props.opacity || 0.5,
-                    color: feature.properties.color || props.color || '#cccccc',
-                    fillOpacity: feature.properties.fillOpacity || props.fillOpacity || 0.5,
-                  }
-                }
-              }).addTo(map);
-            });
-          }
-
-          // Fly to the new marker destination if latitude and longitude exist
-          if (c['Latitude'] && c['Longitude']) {
-            var zoom = c['Zoom'] ? c['Zoom'] : CHAPTER_ZOOM;
-            map.flyTo([c['Latitude'], c['Longitude']], zoom, {
-              animate: true,
-              duration: 2, // default is 2 seconds
-            });
-          }
-
-          // No need to iterate through the following chapters
           break;
         }
       }
     });
 
+    function markActiveColor(k) {
+      for (var i = 0; i < markers.length; i++) {
+        if (markers[i] && markers[i]._icon) {
+          markers[i]._icon.className = markers[i]._icon.className.replace(' marker-active', '');
+          if (i == k) {
+            markers[k]._icon.className += ' marker-active';
+          }
+        }
+      }
+    }
 
     $('#contents').append(" \
       <div id='space-at-the-bottom'> \
@@ -403,7 +358,6 @@ $(window).on('load', function() {
       </div> \
     ");
 
-    /* Generate a CSS sheet with cosmetic changes */
     $("<style>")
       .prop("type", "text/css")
       .html("\
@@ -415,18 +369,9 @@ $(window).on('load', function() {
         color: " + trySetting('_narrativeLink', 'blue') + " \
       }\
       .in-focus {\
-        background-color: " + trySetting('_narrativeActive', '#f0f0f0') + " \
+        background-color: " + trySetting('_narrativeActive', '#ffffff') + " \
       }")
       .appendTo("head");
-
-
-    endPixels = parseInt(getSetting('_pixelsAfterFinalChapter'));
-    if (endPixels > 100) {
-      $('#space-at-the-bottom').css({
-        'height': (endPixels / 2) + 'px',
-        'padding-top': (endPixels / 2) + 'px',
-      });
-    }
 
     var bounds = [];
     for (i in markers) {
@@ -435,13 +380,14 @@ $(window).on('load', function() {
         markers[i]['_pixelsAbove'] = pixelsAbove[i];
         markers[i].on('click', function() {
           var pixels = parseInt($(this)[0]['_pixelsAbove']) + 5;
-          $('div#contents').animate({
-            scrollTop: pixels + 'px'});
+          $('div#contents').animate({ scrollTop: pixels + 'px' });
         });
         bounds.push(markers[i].getLatLng());
       }
     }
-    map.fitBounds(bounds);
+    if (bounds.length) {
+      map.fitBounds(bounds);
+    }
 
     $('#map, #narration, #title').css('visibility', 'visible');
     $('div.loader').css('visibility', 'hidden');
@@ -449,41 +395,19 @@ $(window).on('load', function() {
     $('div#container0').addClass("in-focus");
     $('div#contents').animate({scrollTop: '1px'});
 
-    // On first load, check hash and if it contains an number, scroll down
     if (parseInt(location.hash.substr(1))) {
-      var containerId = parseInt( location.hash.substr(1) ) - 1;
-      $('#contents').animate({
-        scrollTop: $('#container' + containerId).offset().top
-      }, 2000);
+      var containerId = parseInt(location.hash.substr(1)) - 1;
+      if ($('#container' + containerId).length) {
+        $('#contents').animate({
+          scrollTop: $('#container' + containerId).offset().top
+        }, 1500);
+      }
     }
-
-    // Add Google Analytics if the ID exists
-    var ga = getSetting('_googleAnalytics');
-    if ( ga && ga.length >= 10 ) {
-      var gaScript = document.createElement('script');
-      gaScript.setAttribute('src','https://www.googletagmanager.com/gtag/js?id=' + ga);
-      document.head.appendChild(gaScript);
-
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', ga);
-    }
-
-
   }
 
-
-  /**
-   * Changes map attribution (author, GitHub repo, email etc.) in bottom-right
-   */
   function changeAttribution() {
     var attributionHTML = $('.leaflet-control-attribution')[0].innerHTML;
-    var credit = 'View <a href="'
-      // Show Google Sheet URL if the variable exists and is not empty, otherwise link to Chapters.csv
-      + (typeof googleDocURL !== 'undefined' && googleDocURL ? googleDocURL : './csv/Chapters.csv')
-      + '" target="_blank">data</a>';
-
+    var credit = 'View <a href="./csv/Chapters.csv" target="_blank">data</a>';
     var name = getSetting('_authorName');
     var url = getSetting('_authorURL');
 
@@ -501,5 +425,4 @@ $(window).on('load', function() {
     credit += ' with ';
     $('.leaflet-control-attribution')[0].innerHTML = credit + attributionHTML;
   }
-
 });

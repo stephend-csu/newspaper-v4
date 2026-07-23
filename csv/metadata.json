@@ -1,0 +1,12 @@
+{
+  "addresses_found": 150,
+  "addresses_not_found": 0,
+  "newspaper_counts": {
+    "EBT": 85,
+    "WSJ": 42,
+    "SFC": 28,
+    "NYT": 15,
+    "UST": 5
+  },
+  "upload_timestamp_pst": "Jul 23, 2026 12:48 PM PST"
+}

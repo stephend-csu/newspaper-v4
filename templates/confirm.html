@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmation Screen</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333333;
+      padding: 30px 20px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      color: #1a202c;
+      font-weight: 700;
+    }
+    .nav-links a {
+      margin-left: 16px;
+      color: #3182ce;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Newspaper Summary Cards */
+    .summary-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+    }
+    .summary-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #2d3748;
+      margin-bottom: 12px;
+    }
+    .summary-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .paper-badge {
+      background: #edf2f7;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #2b6cb0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+    }
+    .paper-badge .count {
+      background: #3182ce;
+      color: white;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+    }
+
+    /* Sections */
+    .section-card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+    }
+    .section-header {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .problem-header {
+      color: #e53e3e;
+    }
+    .valid-header {
+      color: #2f855a;
+    }
+
+    /* Technical Blurb */
+    .technical-blurb {
+      background: #fff5f5;
+      border-left: 4px solid #e53e3e;
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      color: #742a2a;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* Address Item Rows */
+    .address-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .address-item {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .address-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .address-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #2d3748;
+      flex: 1;
+    }
+    .address-num {
+      color: #718096;
+      font-size: 0.95rem;
+      min-width: 25px;
+    }
+    .input-edit {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      flex: 1;
+      width: 100%;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover {
+      opacity: 0.88;
+    }
+    .btn-valid {
+      background: #48bb78;
+      color: white;
+    }
+    .btn-invalid {
+      background: #e53e3e;
+      color: white;
+    }
+    .btn-primary {
+      background: #3182ce;
+      color: white;
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      width: 100%;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(49,130,206,0.3);
+    }
+    
+    /* Auto-suggest dropdown */
+    .suggest-box {
+      position: relative;
+      width: 100%;
+    }
+    .suggest-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+      max-height: 180px;
+      overflow-y: auto;
+      display: none;
+    }
+    .suggest-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .suggest-item:hover {
+      background: #edf2f7;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none;
+    }
+    .modal-box {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 450px;
+      width: 90%;
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3182ce;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Confirmation Screen</h1>
+      <div class="nav-links">
+        <a href="/upload">← Back to Upload</a>
+        <a href="/">Main Map Page</a>
+      </div>
+    </header>
+
+    <!-- Newspaper Totals Card -->
+    <div class="summary-card">
+      <div class="summary-title">Total Newspaper Count (Valid & Problem Addresses)</div>
+      <div class="summary-grid" id="newspaperGrid">
+        <div style="color:#718096;">No newspaper data loaded. Upload a PDF first.</div>
+      </div>
+    </div>
+
+    <!-- Problem Addresses Section -->
+    <div class="section-card">
+      <div class="section-header problem-header">
+        <span>Problem Addresses requiring review (<span id="problemCount">0</span>)</span>
+      </div>
+      
+      <div class="technical-blurb">
+        <strong>Technical Address Validation Methodology:</strong><br>
+        Addresses extracted from the PDF do not include city names. The system attempts to resolve each street address against public OpenStreetMap and Census databases across Contra Costa County cities (Walnut Creek, Concord, Pleasant Hill, Lafayette, Danville, etc.). Addresses below were flagged because they either could not be matched uniquely or matched multiple cities. Please review or edit the address line before marking valid.
+      </div>
+
+      <div class="address-list" id="problemList">
+        <div style="color:#718096; padding: 10px;">No problem addresses found. All addresses validated cleanly!</div>
+      </div>
+    </div>
+
+    <!-- Valid Addresses Section -->
+    <div class="section-card">
+      <div class="section-header valid-header">
+        <span>Validated Addresses (<span id="validCount">0</span>)</span>
+      </div>
+
+      <div class="address-list" id="validList">
+        <div style="color:#718096; padding: 10px;">No valid addresses loaded.</div>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-primary" id="btnConfirmRoute" onclick="submitConfirmedRoute()">
+      Confirm & Generate Route (Upload to GitHub)
+    </button>
+  </div>
+
+  <!-- Progress Modal -->
+  <div class="modal-overlay" id="progressModal">
+    <div class="modal-box">
+      <h3 style="margin-bottom:10px;">Processing Delivery Route</h3>
+      <div class="spinner"></div>
+      <p id="modalStatusText" style="color:#4a5568; font-size:0.95rem;">Optimizing road driving route via OSRM...</p>
+    </div>
+  </div>
+
+  <script>
+    let routeData = {
+      newspaper_counts: {},
+      valid_addresses: [],
+      problem_addresses: []
+    };
+
+    // Load state from localStorage on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const stored = localStorage.getItem('extracted_route_data');
+      if (stored) {
+        try {
+          routeData = JSON.parse(stored);
+        } catch(e) {
+          console.error(e);
+        }
+      }
+      renderAll();
+    });
+
+    function renderAll() {
+      renderNewspapers();
+      renderProblemAddresses();
+      renderValidAddresses();
+    }
+
+    function renderNewspapers() {
+      const grid = document.getElementById('newspaperGrid');
+      grid.innerHTML = '';
+      const counts = routeData.newspaper_counts || {};
+      
+      const keys = Object.keys(counts);
+      if (keys.length === 0) {
+        grid.innerHTML = '<div style="color:#718096;">No newspaper data available.</div>';
+        return;
+      }
+
+      keys.forEach(paper => {
+        const badge = document.createElement('div');
+        badge.className = 'paper-badge';
+        badge.innerHTML = `${paper} <span class="count">${counts[paper]}</span>`;
+        grid.appendChild(badge);
+      });
+    }
+
+    function renderProblemAddresses() {
+      const container = document.getElementById('problemList');
+      const countSpan = document.getElementById('problemCount');
+      container.innerHTML = '';
+      
+      const list = routeData.problem_addresses || [];
+      countSpan.textContent = list.length;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="color:#718096; padding:8px;">No problem addresses found.</div>';
+        return;
+      }
+
+      list.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'address-item';
+
+        const num = index + 1;
+        const papers = (item.newspapers || []).join(' ') || 'None';
+
+        div.innerHTML = `
+          <div class="address-row">
+            <span class="address-num">${num}.</span>
+            <div class="suggest-box">
+              <input type="text" class="input-edit" value="${item.full_address || item.raw_address}" 
+                     oninput="handleSuggest(this, ${index})" id="prob_input_${index}" />
+              <div class="suggest-dropdown" id="suggest_drop_${index}"></div>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-valid" onclick="markProblemAsValid(${index})">Mark Valid</button>
+              <button class="btn btn-invalid" onclick="markProblemAsInvalid(${index})">Mark Invalid</button>
+            </div>
+          </div>
+          <div style="font-size:0.85rem; color:#718096;">
+            <strong>Newspapers:</strong> ${papers} &nbsp;|&nbsp; <strong>Reason:</strong> ${item.reason || 'Unverified'}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderValidAddresses() {
+      const container = document.getElementById('validList');
+      const countSpan = document.getElementById('validCount');
+      container.innerHTML = '';
+
+      const list = routeData.valid_addresses || [];
+      countSpan.textContent = list.length;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="color:#718096; padding:8px;">No valid addresses present.</div>';
+        return;
+      }
+
+      list.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'address-item';
+
+        const num = index + 1;
+        const papers = (item.newspapers || []).join(' ') || 'None';
+
+        div.innerHTML = `
+          <div class="address-row">
+            <span class="address-num">${num}.</span>
+            <div class="address-info">${item.full_address || item.raw_address}</div>
+            <div class="btn-group">
+              <button class="btn btn-invalid" onclick="markValidAsInvalid(${index})">Mark Invalid</button>
+            </div>
+          </div>
+          <div style="font-size:0.85rem; color:#718096;">
+            <strong>Newspapers:</strong> ${papers} &nbsp;|&nbsp; <strong>City:</strong> ${item.city || 'Walnut Creek'}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function markProblemAsValid(index) {
+      const inputVal = document.getElementById(`prob_input_${index}`).value.trim();
+      const item = routeData.problem_addresses.splice(index, 1)[0];
+      
+      item.full_address = inputVal;
+      if (!item.full_address.includes('CA')) {
+        item.full_address += ', CA';
+      }
+      
+      // Move to top of valid section
+      routeData.valid_addresses.unshift(item);
+      saveState();
+      renderAll();
+    }
+
+    function markProblemAsInvalid(index) {
+      // Remove problem address
+      routeData.problem_addresses.splice(index, 1);
+      saveState();
+      renderAll();
+    }
+
+    function markValidAsInvalid(index) {
+      const item = routeData.valid_addresses.splice(index, 1)[0];
+      item.reason = 'Manually marked invalid by user';
+      // Move to top of problem section
+      routeData.problem_addresses.unshift(item);
+      saveState();
+      renderAll();
+    }
+
+    function handleSuggest(inputElem, index) {
+      const drop = document.getElementById(`suggest_drop_${index}`);
+      const val = inputElem.value;
+      if (val.length < 3) {
+        drop.style.display = 'none';
+        return;
+      }
+
+      fetch(`/api/geocode-suggest?q=${encodeURIComponent(val)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.suggestions && data.suggestions.length > 0) {
+            drop.innerHTML = '';
+            data.suggestions.forEach(sug => {
+              const itemDiv = document.createElement('div');
+              itemDiv.className = 'suggest-item';
+              itemDiv.textContent = sug;
+              itemDiv.onclick = () => {
+                inputElem.value = sug;
+                drop.style.display = 'none';
+              };
+              drop.appendChild(itemDiv);
+            });
+            drop.style.display = 'block';
+          } else {
+            drop.style.display = 'none';
+          }
+        })
+        .catch(err => drop.style.display = 'none');
+    }
+
+    function saveState() {
+      localStorage.setItem('extracted_route_data', JSON.stringify(routeData));
+    }
+
+    function submitConfirmedRoute() {
+      if (!routeData.valid_addresses || routeData.valid_addresses.length === 0) {
+        alert('Please ensure there is at least one valid address before generating route.');
+        return;
+      }
+
+      const modal = document.getElementById('progressModal');
+      const statusText = document.getElementById('modalStatusText');
+      modal.style.display = 'flex';
+      statusText.textContent = 'Initiating background route optimization...';
+
+      const payload = {
+        confirmed_valid_addresses: routeData.valid_addresses,
+        unconfirmed_count: routeData.problem_addresses ? routeData.problem_addresses.length : 0,
+        newspaper_counts: routeData.newspaper_counts || {}
+      };
+
+      fetch('/api/process-route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          modal.style.display = 'none';
+          alert('Error: ' + data.error);
+        } else {
+          pollJobStatus(data.job_id);
+        }
+      })
+      .catch(err => {
+        modal.style.display = 'none';
+        alert('Failed to launch route job: ' + err);
+      });
+    }
+
+    function pollJobStatus(jobId) {
+      const statusText = document.getElementById('modalStatusText');
+      
+      const interval = setInterval(() => {
+        fetch(`/api/job-status/${jobId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'processing') {
+              statusText.textContent = data.message || 'Processing route...';
+            } else if (data.status === 'completed') {
+              clearInterval(interval);
+              statusText.textContent = 'Route completed and uploaded to GitHub! Redirecting to main map...';
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1200);
+            } else if (data.status === 'error') {
+              clearInterval(interval);
+              document.getElementById('progressModal').style.display = 'none';
+              alert('Processing error: ' + data.message);
+            }
+          })
+          .catch(err => {
+            console.error('Polling error:', err);
+          });
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

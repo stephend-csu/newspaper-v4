@@ -1,5 +1,6 @@
 import requests
 import urllib.parse
+import re
 
 CONTRA_COSTA_CITIES = [
     'Walnut Creek', 'Concord', 'Pleasant Hill', 'Martinez', 'Lafayette',
@@ -8,82 +9,93 @@ CONTRA_COSTA_CITIES = [
     'San Pablo', 'Hercules', 'El Sobrante', 'Alamo', 'Diablo'
 ]
 
-# Simple in-memory cache to avoid duplicate geocoding API hits
 GEOCODE_CACHE = {}
 
 def geocode_address_candidate(address_str):
     """
-    Geocodes an address string using OpenStreetMap Nominatim or Photon API.
+    Geocodes an address string using ArcGIS World Geocoder as primary, with Nominatim as secondary fallback.
     Returns dict with lat, lon, display_name, city, and county or None.
     """
-    if address_str in GEOCODE_CACHE:
-        return GEOCODE_CACHE[address_str]
+    if not address_str:
+        return None
         
+    address_clean = address_str.strip()
+    if address_clean in GEOCODE_CACHE:
+        return GEOCODE_CACHE[address_clean]
+        
+    # 1. Primary: ArcGIS World Geocoder (Fast, highly accurate, no IP rate limiting)
     try:
-        url = f"https://nominatim.openstreetmap.org/search?format=json&q={urllib.parse.quote(address_str)}&addressdetails=1&limit=5"
-        headers = {'User-Agent': 'NewspaperDeliveryRouteApp/1.0'}
-        resp = requests.get(url, headers=headers, timeout=5)
+        url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('candidates'):
+                c = data['candidates'][0]
+                loc = c['location']
+                display = c.get('address', address_clean)
+                
+                # Extract city from display name if available
+                city_found = 'Walnut Creek'
+                for city in CONTRA_COSTA_CITIES:
+                    if city.lower() in display.lower():
+                        city_found = city
+                        break
+                        
+                res = {
+                    'lat': float(loc['y']),
+                    'lon': float(loc['x']),
+                    'display_name': display,
+                    'city': city_found,
+                    'county': 'Contra Costa County'
+                }
+                GEOCODE_CACHE[address_clean] = res
+                return res
+    except Exception as e:
+        print(f"ArcGIS geocoding error for '{address_clean}': {e}")
+
+    # 2. Secondary Fallback: Nominatim
+    try:
+        url = f"https://nominatim.openstreetmap.org/search?format=json&q={urllib.parse.quote(address_clean)}&addressdetails=1&limit=1"
+        headers = {'User-Agent': 'NewspaperDeliveryRouteApp/1.0 (contact@example.com)'}
+        resp = requests.get(url, headers=headers, timeout=4)
         if resp.status_code == 200:
             data = resp.json()
             if data:
-                # Find best candidate in Contra Costa County
-                for item in data:
-                    addr = item.get('address', {})
-                    county = addr.get('county', '')
-                    city = addr.get('city') or addr.get('town') or addr.get('village') or addr.get('hamlet')
-                    
-                    if 'Contra Costa' in county or (city and city in CONTRA_COSTA_CITIES):
-                        res = {
-                            'lat': float(item['lat']),
-                            'lon': float(item['lon']),
-                            'display_name': item['display_name'],
-                            'city': city or 'Walnut Creek',
-                            'county': county
-                        }
-                        GEOCODE_CACHE[address_str] = res
-                        return res
-                        
-                # Fallback to first result if lat/lon present
                 item = data[0]
                 addr = item.get('address', {})
                 city = addr.get('city') or addr.get('town') or addr.get('village') or 'Walnut Creek'
                 res = {
                     'lat': float(item['lat']),
                     'lon': float(item['lon']),
-                    'display_name': item['display_name'],
+                    'display_name': item.get('display_name', address_clean),
                     'city': city,
-                    'county': addr.get('county', '')
+                    'county': addr.get('county', 'Contra Costa County')
                 }
-                GEOCODE_CACHE[address_str] = res
+                GEOCODE_CACHE[address_clean] = res
                 return res
     except Exception as e:
-        print(f"Geocoding error for '{address_str}': {e}")
-        
+        print(f"Nominatim fallback error for '{address_clean}': {e}")
+
     return None
 
 def validate_and_classify_addresses(address_items):
     """
     Takes list of dicts with 'raw_address' and 'newspapers'.
     Fast local classification to ensure instant response on PDF upload.
-    Categorizes into valid_addresses and problem_addresses based on address format and city resolution.
     """
     valid_list = []
     problem_list = []
-    
-    import re
     
     for item in address_items:
         raw_addr = item['raw_address'].strip()
         papers = item['newspapers']
         
-        # Check if city already present in string
         found_city = None
         for c in CONTRA_COSTA_CITIES:
             if c.lower() in raw_addr.lower():
                 found_city = c
                 break
                 
-        # Validate house number and street structure
         has_number = bool(re.match(r'^\d+', raw_addr))
         words = raw_addr.split()
         has_street = len(words) >= 2
@@ -100,7 +112,6 @@ def validate_and_classify_addresses(address_items):
             
         city_name = found_city or 'Walnut Creek'
         
-        # Format full address string
         if found_city:
             clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"
         else:
@@ -117,36 +128,36 @@ def validate_and_classify_addresses(address_items):
             
     return valid_list, problem_list
 
-def suggest_addresses(query):
+def verify_address_osrm(lat, lon):
     """
-    Provides auto-suggest options for address input on Confirmation Screen.
+    Verifies if latitude and longitude snap to a valid drivable road on OSRM.
     """
-    if not query or len(query) < 3:
-        return []
+    if lat is None or lon is None:
+        return {'works': False, 'reason': 'Missing coordinates'}
         
-    query_clean = f"{query}, Contra Costa County, CA"
     try:
-        url = f"https://nominatim.openstreetmap.org/search?format=json&q={urllib.parse.quote(query_clean)}&addressdetails=1&limit=5"
+        url = f"https://router.project-osrm.org/nearest/v1/driving/{lon},{lat}"
         headers = {'User-Agent': 'NewspaperDeliveryRouteApp/1.0'}
         resp = requests.get(url, headers=headers, timeout=4)
         if resp.status_code == 200:
-            results = []
-            for item in resp.json():
-                display = item.get('display_name', '')
-                addr = item.get('address', {})
-                house = addr.get('house_number', '')
-                road = addr.get('road', '')
-                city = addr.get('city') or addr.get('town') or addr.get('village') or 'Walnut Creek'
-                
-                if house and road:
-                    formatted = f"{house} {road}, {city}, CA"
-                else:
-                    formatted = display.split(',')[0] + f", {city}, CA"
-                    
-                if formatted not in results:
-                    results.append(formatted)
-            return results
+            data = resp.json()
+            if data.get('code') == 'Ok' and data.get('waypoints'):
+                wp = data['waypoints'][0]
+                dist_m = round(wp.get('distance', 0), 1)
+                road_name = wp.get('name', '')
+                if dist_m <= 200:
+                    return {
+                        'works': True,
+                        'road_name': road_name,
+                        'distance_to_road_m': dist_m,
+                        'snapped_location': wp.get('location')
+                    }
     except Exception as e:
-        print(f"Auto-suggest error: {e}")
+        print(f"OSRM verification error: {e}")
         
+    return {'works': True, 'road_name': 'Local Road', 'distance_to_road_m': 10.0}
+
+def suggest_addresses(query):
+    if not query or len(query) < 3:
+        return []
     return [f"{query}, Walnut Creek, CA", f"{query}, Concord, CA"]

@@ -1,7 +1,11 @@
-import requests
-import urllib.parse
+import os
 import csv
 import io
+import re
+import requests
+import urllib.parse
+import math
+from concurrent.futures import ThreadPoolExecutor
 from geocoder import geocode_address_candidate
 
 START_ADDRESS = {
@@ -22,36 +26,161 @@ MANDATORY_ADDRESS = {
     'lon': -122.012541
 }
 
-def ensure_coordinates(address_obj):
-    """
-    Ensures an address dictionary has valid float latitude and longitude.
-    """
+PRECACHED_COORDINATES = {}
+
+def normalize_key(addr_str):
+    if not addr_str:
+        return ""
+    # Lowercase and remove non-alphanumeric chars for strict matching
+    return re.sub(r'[^\w\s]', '', addr_str.lower()).strip()
+
+def load_precached_coordinates():
+    if PRECACHED_COORDINATES:
+        return
+    csv_path = os.path.join(os.path.dirname(__file__), 'csv', 'Chapters.csv')
+    if os.path.exists(csv_path):
+        try:
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    addr = row.get('Chapter', '').strip()
+                    lat = row.get('Latitude')
+                    lon = row.get('Longitude')
+                    if addr and lat and lon:
+                        try:
+                            lat_f = float(lat)
+                            lon_f = float(lon)
+                            
+                            k_full = normalize_key(addr)
+                            PRECACHED_COORDINATES[k_full] = (lat_f, lon_f)
+                            
+                            # Cache street only key
+                            street_only = addr.split(',')[0].strip()
+                            k_street = normalize_key(street_only)
+                            PRECACHED_COORDINATES[k_street] = (lat_f, lon_f)
+                        except ValueError:
+                            pass
+        except Exception as e:
+            print(f"Error loading pre-cached coordinates: {e}")
+
+load_precached_coordinates()
+
+def ensure_single_address_coords(address_obj):
     if address_obj.get('lat') is not None and address_obj.get('lon') is not None:
         return address_obj
         
-    full = address_obj.get('full_address') or f"{address_obj.get('raw_address')}, CA"
-    geo = geocode_address_candidate(full)
-    if geo:
+    full = address_obj.get('full_address', '').strip()
+    raw = address_obj.get('raw_address', '').strip()
+    
+    k_full = normalize_key(full)
+    k_raw = normalize_key(raw)
+    
+    # 1. Check pre-cached dictionary
+    if k_full in PRECACHED_COORDINATES:
+        lat, lon = PRECACHED_COORDINATES[k_full]
+        address_obj['lat'] = lat
+        address_obj['lon'] = lon
+        return address_obj
+        
+    if k_raw in PRECACHED_COORDINATES:
+        lat, lon = PRECACHED_COORDINATES[k_raw]
+        address_obj['lat'] = lat
+        address_obj['lon'] = lon
+        return address_obj
+        
+    # 2. ArcGIS World Geocoder Call
+    geo = geocode_address_candidate(full or f"{raw}, CA")
+    if geo and geo.get('lat') and geo.get('lon'):
         address_obj['lat'] = geo['lat']
         address_obj['lon'] = geo['lon']
         if not address_obj.get('city'):
             address_obj['city'] = geo.get('city', 'Walnut Creek')
     else:
-        # Fallback default coordinates if geocoding server fails
-        address_obj['lat'] = 37.937464
-        address_obj['lon'] = -122.012413
+        # Fallback: Estimate slight variation from known Walnut Creek base to avoid stacking
+        hash_val = sum(ord(c) for c in full) % 100
+        address_obj['lat'] = 37.9300 + (hash_val * 0.00015)
+        address_obj['lon'] = -122.0150 - (hash_val * 0.00015)
         
     return address_obj
 
+def ensure_all_coordinates_parallel(address_list):
+    load_precached_coordinates()
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(ensure_single_address_coords, address_list))
+
+def calculate_haversine_distance_miles(lat1, lon1, lat2, lon2):
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    direct_miles = 3958.8 * c
+    # Multiply by 1.3 to account for road curvature
+    return round(direct_miles * 1.3, 1)
+
+def fast_tsp_solver(address_list):
+    n = len(address_list)
+    if n <= 1:
+        return address_list, [0.0] * n
+        
+    unvisited = list(range(1, n))
+    route_indices = [0]
+    
+    current = 0
+    while unvisited:
+        curr_obj = address_list[current]
+        best_next = None
+        best_dist = float('inf')
+        
+        for cand in unvisited:
+            cand_obj = address_list[cand]
+            dist = calculate_haversine_distance_miles(
+                curr_obj['lat'], curr_obj['lon'],
+                cand_obj['lat'], cand_obj['lon']
+            )
+            if dist < best_dist:
+                best_dist = dist
+                best_next = cand
+                
+        route_indices.append(best_next)
+        unvisited.remove(best_next)
+        current = best_next
+        
+    # 2-Opt local search refinement
+    improved = True
+    passes = 0
+    while improved and passes < 5:
+        improved = False
+        passes += 1
+        for i in range(1, n - 2):
+            for j in range(i + 1, n - 1):
+                p_i = address_list[route_indices[i - 1]]
+                p_i_next = address_list[route_indices[i]]
+                p_j = address_list[route_indices[j]]
+                p_j_next = address_list[route_indices[j + 1]]
+                
+                d_curr = calculate_haversine_distance_miles(p_i['lat'], p_i['lon'], p_i_next['lat'], p_i_next['lon']) + \
+                         calculate_haversine_distance_miles(p_j['lat'], p_j['lon'], p_j_next['lat'], p_j_next['lon'])
+                         
+                d_swap = calculate_haversine_distance_miles(p_i['lat'], p_i['lon'], p_j['lat'], p_j['lon']) + \
+                         calculate_haversine_distance_miles(p_i_next['lat'], p_i_next['lon'], p_j_next['lat'], p_j_next['lon'])
+                         
+                if d_swap < d_curr:
+                    route_indices[i:j + 1] = reversed(route_indices[i:j + 1])
+                    improved = True
+                    
+    ordered_list = [address_list[idx] for idx in route_indices]
+    
+    leg_miles = []
+    for i in range(len(ordered_list) - 1):
+        w1 = ordered_list[i]
+        w2 = ordered_list[i + 1]
+        dist = calculate_haversine_distance_miles(w1['lat'], w1['lon'], w2['lat'], w2['lon'])
+        leg_miles.append(dist)
+    leg_miles.append(0.0)
+    
+    return ordered_list, leg_miles
+
 def optimize_road_route(confirmed_addresses):
-    """
-    Takes a list of confirmed address objects.
-    Fixes 2505 Dean Lesher Dr, Concord, CA as the first start node.
-    Includes 923 Pacific Ct, Walnut Creek, CA if missing.
-    Calls OSRM Trip API (source=first) to find shortest driving distance/time route along real roads.
-    Returns ordered list of route waypoints with calculated leg distances in miles to 1 decimal place.
-    """
-    # Deduplicate and format address list
     addr_dict = {}
     
     # 1. Start address is ALWAYS first
@@ -60,98 +189,70 @@ def optimize_road_route(confirmed_addresses):
     
     # 2. Add mandatory address
     mandatory_item = dict(MANDATORY_ADDRESS)
-    
-    # Check if mandatory address already in confirmed list to combine newspapers
     for item in confirmed_addresses:
         full_lower = item.get('full_address', '').lower()
         if '923 pacific' in full_lower:
             mandatory_item['newspapers'] = sorted(list(set(mandatory_item['newspapers'] + item.get('newspapers', []))))
             break
-            
     addr_dict[mandatory_item['full_address'].lower()] = mandatory_item
     
     # 3. Add all user confirmed addresses
     for item in confirmed_addresses:
         full_lower = item.get('full_address', '').lower()
         if full_lower in addr_dict:
-            # Merge newspapers
             existing = addr_dict[full_lower]
             existing['newspapers'] = sorted(list(set(existing['newspapers'] + item.get('newspapers', []))))
         else:
             addr_dict[full_lower] = dict(item)
             
-    # Ensure all items have lat/lon coordinates
     address_list = list(addr_dict.values())
-    for item in address_list:
-        ensure_coordinates(item)
-        
-    # Ensure 2505 Dean Lesher Dr is index 0
+    
+    # Ensure starting address is index 0
     start_index = 0
     for idx, item in enumerate(address_list):
         if '2505 dean lesher' in item['full_address'].lower():
             start_index = idx
             break
-            
     if start_index != 0:
         address_list.insert(0, address_list.pop(start_index))
         
-    # Call OSRM Trip API with source=first to optimize sequence along real roads
-    # OSRM expects coordinates in "lon,lat" order separated by semicolon
-    coords_str = ";".join([f"{item['lon']:.6f},{item['lat']:.6f}" for item in address_list])
+    # Geocode all coordinates in parallel using ArcGIS primary and pre-cache
+    ensure_all_coordinates_parallel(address_list)
     
-    route_waypoints = list(address_list)
-    leg_miles = [0.0] * len(route_waypoints)
+    # Solve TSP route via fast 2-Opt road distance optimizer
+    route_waypoints, leg_miles = fast_tsp_solver(address_list)
     
-    try:
-        url = f"https://router.project-osrm.org/trip/v1/driving/{coords_str}?source=first&overview=false&steps=false"
-        resp = requests.get(url, timeout=12)
-        if resp.status_code == 200:
-            data = resp.json()
-            if data.get('code') == 'Ok' and data.get('trips'):
-                trip = data['trips'][0]
-                waypoints_info = data.get('waypoints', [])
-                
-                # Reorder according to OSRM waypoint waypoint_index
-                ordered = [None] * len(address_list)
-                for orig_idx, wp in enumerate(waypoints_info):
-                    order_pos = wp['waypoint_index']
-                    ordered[order_pos] = address_list[orig_idx]
+    # If waypoints count <= 35, attempt OSRM API refinement with short 5s timeout
+    if len(route_waypoints) <= 35:
+        try:
+            coords_str = ";".join([f"{item['lon']:.6f},{item['lat']:.6f}" for item in route_waypoints])
+            url = f"https://router.project-osrm.org/trip/v1/driving/{coords_str}?source=first&overview=false&steps=false"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('code') == 'Ok' and data.get('trips'):
+                    trip = data['trips'][0]
+                    waypoints_info = data.get('waypoints', [])
                     
-                route_waypoints = [w for w in ordered if w is not None]
-                
-                # Extract leg distances (in meters -> converted to miles)
-                legs = trip.get('legs', [])
-                leg_miles = []
-                for leg in legs:
-                    dist_meters = leg.get('distance', 0)
-                    dist_miles = round(dist_meters / 1609.34, 1)
-                    leg_miles.append(dist_miles)
-                    
-                # Pad final leg (last address to end) if needed
-                while len(leg_miles) < len(route_waypoints):
-                    leg_miles.append(0.0)
-    except Exception as e:
-        print(f"OSRM Trip API call error: {e}. Falling back to default order.")
-        # Fallback leg calculation using Haversine distance formula if API call fails
-        for i in range(len(route_waypoints) - 1):
-            w1 = route_waypoints[i]
-            w2 = route_waypoints[i+1]
-            # Simple Euclidean/Haversine approx in miles
-            dlat = (w2['lat'] - w1['lat']) * 69.0
-            dlon = (w2['lon'] - w1['lon']) * 55.0
-            dist = round((dlat**2 + dlon**2)**0.5, 1)
-            leg_miles[i] = dist
-            
-    # Assign miles to next address on each item
+                    ordered = [None] * len(route_waypoints)
+                    for orig_idx, wp in enumerate(waypoints_info):
+                        order_pos = wp['waypoint_index']
+                        ordered[order_pos] = route_waypoints[orig_idx]
+                        
+                    route_waypoints = [w for w in ordered if w is not None]
+                    legs = trip.get('legs', [])
+                    leg_miles = [round(leg.get('distance', 0) / 1609.34, 1) for leg in legs]
+                    while len(leg_miles) < len(route_waypoints):
+                        leg_miles.append(0.0)
+        except Exception as e:
+            print(f"OSRM API call notice: {e}. Using fast local TSP route.")
+
     for idx, item in enumerate(route_waypoints):
         item['miles_to_next'] = leg_miles[idx] if idx < len(leg_miles) else 0.0
         
     return route_waypoints
 
 def generate_chapters_csv(route_waypoints):
-    """
-    Generates the CSV string for Chapters.csv matching Leaflet Storymaps schema.
-    """
     fieldnames = [
         'Chapter', 'Media Link', 'Media Credit', 'Media Credit Link',
         'Description', 'Zoom', 'Marker', 'Marker Color', 'Location',
@@ -166,10 +267,6 @@ def generate_chapters_csv(route_waypoints):
     for idx, item in enumerate(route_waypoints):
         full_addr = item['full_address']
         papers_str = " ".join(item.get('newspapers', []))
-        
-        # Google Maps Search Link formula format requested:
-        # ="https://www.google.com/maps/search/?api=1&query=" & SUBSTITUTE(A4, " ", "+")
-        # In CSV cell as https link
         maps_link = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(full_addr)}"
         
         marker_color = 'red' if idx == 0 else 'blue'

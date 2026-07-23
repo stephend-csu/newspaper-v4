@@ -36,7 +36,6 @@ def ensure_single_address_coords(address_obj):
     full = address_obj.get('full_address', '').strip()
     raw = address_obj.get('raw_address', '').strip()
     
-    # Perform live geocoding via ArcGIS World Geocoder
     geo = geocode_address_candidate(full or f"{raw}, CA")
     if geo and geo.get('lat') and geo.get('lon'):
         address_obj['lat'] = geo['lat']
@@ -44,7 +43,6 @@ def ensure_single_address_coords(address_obj):
         if not address_obj.get('city'):
             address_obj['city'] = geo.get('city', 'Walnut Creek')
     else:
-        # Fallback if geocoder fails to avoid exact duplicate coordinates
         hash_val = sum(ord(c) for c in (full or raw)) % 100
         address_obj['lat'] = 37.9300 + (hash_val * 0.00015)
         address_obj['lon'] = -122.0150 - (hash_val * 0.00015)
@@ -129,6 +127,100 @@ def fast_tsp_solver(address_list):
     
     return ordered_list, leg_miles
 
+def normalize_street_name(street_name):
+    s = street_name.lower().strip()
+    s = re.sub(r'\b(court|ct)\b', 'ct', s)
+    s = re.sub(r'\b(drive|dr)\b', 'dr', s)
+    s = re.sub(r'\b(lane|ln)\b', 'ln', s)
+    s = re.sub(r'\b(road|rd)\b', 'rd', s)
+    s = re.sub(r'\b(avenue|ave)\b', 'ave', s)
+    s = re.sub(r'\b(boulevard|blvd)\b', 'blvd', s)
+    s = re.sub(r'\b(circle|cir)\b', 'cir', s)
+    s = re.sub(r'\b(place|pl)\b', 'pl', s)
+    s = re.sub(r'\b(street|st)\b', 'st', s)
+    s = re.sub(r'\b(terrace|ter)\b', 'ter', s)
+    s = re.sub(r'\b(parkway|pkwy)\b', 'pkwy', s)
+    return s
+
+def extract_house_number_and_street(full_address):
+    """
+    Extracts integer house number and normalized street name from an address string.
+    e.g. '91 Arbolado Dr, Walnut Creek, CA' -> (91, 'arbolado dr')
+    """
+    street_part = full_address.split(',')[0].strip()
+    match = re.match(r'^(\d+)\s+(.+)$', street_part)
+    if match:
+        num = int(match.group(1))
+        street_name = normalize_street_name(match.group(2))
+        return num, street_name
+    return 0, normalize_street_name(street_part)
+
+def cluster_streets_post_process(route_waypoints):
+    """
+    Post-processes the TSP route sequence to group multi-address streets together.
+    If the first encountered address of a street group is at or before the middle position
+    of that group in the TSP sequence, substitutes all addresses for that street in ascending house order.
+    Otherwise, substitutes all addresses for that street in descending house order.
+    Original addresses are removed from subsequent positions.
+    """
+    if len(route_waypoints) <= 2:
+        return route_waypoints
+
+    start_waypoint = route_waypoints[0]
+    delivery_waypoints = route_waypoints[1:]
+
+    # Group delivery waypoints by normalized street name
+    street_groups = {}
+    for idx, item in enumerate(delivery_waypoints):
+        num, street_name = extract_house_number_and_street(item['full_address'])
+        if street_name not in street_groups:
+            street_groups[street_name] = []
+        street_groups[street_name].append((idx, item, num))
+
+    # Pre-determine target insertion order for each multi-address street group
+    group_orders = {}
+    for street_name, members in street_groups.items():
+        if len(members) <= 1:
+            group_orders[street_name] = [m[1] for m in members]
+        else:
+            positions = [m[0] for m in members]
+            first_idx = positions[0]
+            middle_idx = (min(positions) + max(positions)) / 2.0
+            
+            ascending = sorted(members, key=lambda m: m[2])
+            if first_idx <= middle_idx:
+                group_orders[street_name] = [m[1] for m in ascending]
+            else:
+                descending = sorted(members, key=lambda m: m[2], reverse=True)
+                group_orders[street_name] = [m[1] for m in descending]
+
+    # Reconstruct final route by substituting street groups at their first occurrence
+    processed_streets = set()
+    new_delivery_waypoints = []
+
+    for idx, item in enumerate(delivery_waypoints):
+        _, street_name = extract_house_number_and_street(item['full_address'])
+        
+        if street_name in processed_streets:
+            continue
+            
+        cluster = group_orders[street_name]
+        new_delivery_waypoints.extend(cluster)
+        processed_streets.add(street_name)
+
+    final_waypoints = [start_waypoint] + new_delivery_waypoints
+
+    # Recalculate leg miles for consecutive stops in the new street-clustered sequence
+    for i in range(len(final_waypoints) - 1):
+        w1 = final_waypoints[i]
+        w2 = final_waypoints[i + 1]
+        dist = calculate_haversine_distance_miles(w1['lat'], w1['lon'], w2['lat'], w2['lon'])
+        w1['miles_to_next'] = dist
+    if final_waypoints:
+        final_waypoints[-1]['miles_to_next'] = 0.0
+
+    return final_waypoints
+
 def optimize_road_route(confirmed_addresses):
     addr_dict = {}
     
@@ -189,15 +281,11 @@ def optimize_road_route(confirmed_addresses):
                         ordered[order_pos] = route_waypoints[orig_idx]
                         
                     route_waypoints = [w for w in ordered if w is not None]
-                    legs = trip.get('legs', [])
-                    leg_miles = [round(leg.get('distance', 0) / 1609.34, 1) for leg in legs]
-                    while len(leg_miles) < len(route_waypoints):
-                        leg_miles.append(0.0)
         except Exception as e:
             print(f"OSRM API call notice: {e}. Using fast local TSP route.")
 
-    for idx, item in enumerate(route_waypoints):
-        item['miles_to_next'] = leg_miles[idx] if idx < len(leg_miles) else 0.0
+    # Apply street-clustering post-processing reordering
+    route_waypoints = cluster_streets_post_process(route_waypoints)
         
     return route_waypoints
 

@@ -9,21 +9,17 @@ CONTRA_COSTA_CITIES = [
     'San Pablo', 'Hercules', 'El Sobrante', 'Alamo', 'Diablo'
 ]
 
-GEOCODE_CACHE = {}
-
 def geocode_address_candidate(address_str):
     """
-    Geocodes an address string using ArcGIS World Geocoder as primary, with Nominatim as secondary fallback.
-    Returns dict with lat, lon, display_name, city, and county or None.
+    Geocodes an address string live using ArcGIS World Geocoder.
+    No in-memory or disk caching. Always returns fresh coordinates.
     """
     if not address_str:
         return None
         
     address_clean = address_str.strip()
-    if address_clean in GEOCODE_CACHE:
-        return GEOCODE_CACHE[address_clean]
         
-    # 1. Primary: ArcGIS World Geocoder (Fast, highly accurate, no IP rate limiting)
+    # Primary: ArcGIS World Geocoder (Fresh live lookup)
     try:
         url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
         resp = requests.get(url, timeout=5)
@@ -34,26 +30,23 @@ def geocode_address_candidate(address_str):
                 loc = c['location']
                 display = c.get('address', address_clean)
                 
-                # Extract city from display name if available
                 city_found = 'Walnut Creek'
                 for city in CONTRA_COSTA_CITIES:
                     if city.lower() in display.lower():
                         city_found = city
                         break
                         
-                res = {
+                return {
                     'lat': float(loc['y']),
                     'lon': float(loc['x']),
                     'display_name': display,
                     'city': city_found,
                     'county': 'Contra Costa County'
                 }
-                GEOCODE_CACHE[address_clean] = res
-                return res
     except Exception as e:
-        print(f"ArcGIS geocoding error for '{address_clean}': {e}")
+        print(f"ArcGIS live geocoding error for '{address_clean}': {e}")
 
-    # 2. Secondary Fallback: Nominatim
+    # Secondary Fallback: Nominatim
     try:
         url = f"https://nominatim.openstreetmap.org/search?format=json&q={urllib.parse.quote(address_clean)}&addressdetails=1&limit=1"
         headers = {'User-Agent': 'NewspaperDeliveryRouteApp/1.0 (contact@example.com)'}
@@ -64,15 +57,13 @@ def geocode_address_candidate(address_str):
                 item = data[0]
                 addr = item.get('address', {})
                 city = addr.get('city') or addr.get('town') or addr.get('village') or 'Walnut Creek'
-                res = {
+                return {
                     'lat': float(item['lat']),
                     'lon': float(item['lon']),
                     'display_name': item.get('display_name', address_clean),
                     'city': city,
                     'county': addr.get('county', 'Contra Costa County')
                 }
-                GEOCODE_CACHE[address_clean] = res
-                return res
     except Exception as e:
         print(f"Nominatim fallback error for '{address_clean}': {e}")
 
@@ -81,7 +72,6 @@ def geocode_address_candidate(address_str):
 def validate_and_classify_addresses(address_items):
     """
     Takes list of dicts with 'raw_address' and 'newspapers'.
-    Fast local classification to ensure instant response on PDF upload.
     """
     valid_list = []
     problem_list = []
@@ -129,9 +119,6 @@ def validate_and_classify_addresses(address_items):
     return valid_list, problem_list
 
 def verify_address_osrm(lat, lon):
-    """
-    Verifies if latitude and longitude snap to a valid drivable road on OSRM.
-    """
     if lat is None or lon is None:
         return {'works': False, 'reason': 'Missing coordinates'}
         

@@ -26,69 +26,17 @@ MANDATORY_ADDRESS = {
     'lon': -122.012541
 }
 
-PRECACHED_COORDINATES = {}
-
-def normalize_key(addr_str):
-    if not addr_str:
-        return ""
-    # Lowercase and remove non-alphanumeric chars for strict matching
-    return re.sub(r'[^\w\s]', '', addr_str.lower()).strip()
-
-def load_precached_coordinates():
-    if PRECACHED_COORDINATES:
-        return
-    csv_path = os.path.join(os.path.dirname(__file__), 'csv', 'Chapters.csv')
-    if os.path.exists(csv_path):
-        try:
-            with open(csv_path, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    addr = row.get('Chapter', '').strip()
-                    lat = row.get('Latitude')
-                    lon = row.get('Longitude')
-                    if addr and lat and lon:
-                        try:
-                            lat_f = float(lat)
-                            lon_f = float(lon)
-                            
-                            k_full = normalize_key(addr)
-                            PRECACHED_COORDINATES[k_full] = (lat_f, lon_f)
-                            
-                            # Cache street only key
-                            street_only = addr.split(',')[0].strip()
-                            k_street = normalize_key(street_only)
-                            PRECACHED_COORDINATES[k_street] = (lat_f, lon_f)
-                        except ValueError:
-                            pass
-        except Exception as e:
-            print(f"Error loading pre-cached coordinates: {e}")
-
-load_precached_coordinates()
-
 def ensure_single_address_coords(address_obj):
+    """
+    Geocodes an address live using ArcGIS. No pre-cache dictionary or disk lookup used.
+    """
     if address_obj.get('lat') is not None and address_obj.get('lon') is not None:
         return address_obj
         
     full = address_obj.get('full_address', '').strip()
     raw = address_obj.get('raw_address', '').strip()
     
-    k_full = normalize_key(full)
-    k_raw = normalize_key(raw)
-    
-    # 1. Check pre-cached dictionary
-    if k_full in PRECACHED_COORDINATES:
-        lat, lon = PRECACHED_COORDINATES[k_full]
-        address_obj['lat'] = lat
-        address_obj['lon'] = lon
-        return address_obj
-        
-    if k_raw in PRECACHED_COORDINATES:
-        lat, lon = PRECACHED_COORDINATES[k_raw]
-        address_obj['lat'] = lat
-        address_obj['lon'] = lon
-        return address_obj
-        
-    # 2. ArcGIS World Geocoder Call
+    # Perform live geocoding via ArcGIS World Geocoder
     geo = geocode_address_candidate(full or f"{raw}, CA")
     if geo and geo.get('lat') and geo.get('lon'):
         address_obj['lat'] = geo['lat']
@@ -96,16 +44,18 @@ def ensure_single_address_coords(address_obj):
         if not address_obj.get('city'):
             address_obj['city'] = geo.get('city', 'Walnut Creek')
     else:
-        # Fallback: Estimate slight variation from known Walnut Creek base to avoid stacking
-        hash_val = sum(ord(c) for c in full) % 100
+        # Fallback if geocoder fails to avoid exact duplicate coordinates
+        hash_val = sum(ord(c) for c in (full or raw)) % 100
         address_obj['lat'] = 37.9300 + (hash_val * 0.00015)
         address_obj['lon'] = -122.0150 - (hash_val * 0.00015)
         
     return address_obj
 
 def ensure_all_coordinates_parallel(address_list):
-    load_precached_coordinates()
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    """
+    Executes live parallel geocoding across all addresses.
+    """
+    with ThreadPoolExecutor(max_workers=10) as executor:
         list(executor.map(ensure_single_address_coords, address_list))
 
 def calculate_haversine_distance_miles(lat1, lon1, lat2, lon2):
@@ -114,7 +64,6 @@ def calculate_haversine_distance_miles(lat1, lon1, lat2, lon2):
     a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     direct_miles = 3958.8 * c
-    # Multiply by 1.3 to account for road curvature
     return round(direct_miles * 1.3, 1)
 
 def fast_tsp_solver(address_list):
@@ -216,7 +165,7 @@ def optimize_road_route(confirmed_addresses):
     if start_index != 0:
         address_list.insert(0, address_list.pop(start_index))
         
-    # Geocode all coordinates in parallel using ArcGIS primary and pre-cache
+    # Live geocode all coordinates in parallel via ArcGIS
     ensure_all_coordinates_parallel(address_list)
     
     # Solve TSP route via fast 2-Opt road distance optimizer

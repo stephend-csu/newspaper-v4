@@ -19,32 +19,34 @@ def geocode_address_candidate(address_str):
         
     address_clean = address_str.strip()
         
-    # Primary: ArcGIS World Geocoder (Fresh live lookup)
-    try:
-        url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            if data.get('candidates'):
-                c = data['candidates'][0]
-                loc = c['location']
-                display = c.get('address', address_clean)
-                
-                city_found = 'Walnut Creek'
-                for city in CONTRA_COSTA_CITIES:
-                    if city.lower() in display.lower():
-                        city_found = city
-                        break
-                        
-                return {
-                    'lat': float(loc['y']),
-                    'lon': float(loc['x']),
-                    'display_name': display,
-                    'city': city_found,
-                    'county': 'Contra Costa County'
-                }
-    except Exception as e:
-        print(f"ArcGIS live geocoding error for '{address_clean}': {e}")
+    # Primary: ArcGIS World Geocoder (Fresh live lookup with retry)
+    for attempt in range(2):
+        try:
+            url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
+            resp = requests.get(url, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('candidates'):
+                    c = data['candidates'][0]
+                    loc = c['location']
+                    display = c.get('address', address_clean)
+                    
+                    city_found = 'Walnut Creek'
+                    for city in CONTRA_COSTA_CITIES:
+                        if city.lower() in display.lower():
+                            city_found = city
+                            break
+                            
+                    return {
+                        'lat': float(loc['y']),
+                        'lon': float(loc['x']),
+                        'display_name': display,
+                        'city': city_found,
+                        'county': 'Contra Costa County'
+                    }
+        except Exception as e:
+            if attempt == 1:
+                print(f"ArcGIS live geocoding error for '{address_clean}': {e}")
 
     # Secondary Fallback: Nominatim
     try:

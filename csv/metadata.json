@@ -1,12 +1,14 @@
 {
-  "addresses_found": 150,
-  "addresses_not_found": 0,
+  "addresses_found": 200,
+  "addresses_not_found": 1,
   "newspaper_counts": {
-    "EBT": 85,
-    "WSJ": 42,
-    "SFC": 28,
-    "NYT": 15,
-    "UST": 5
+    "CAP": 3,
+    "EBT": 156,
+    "NYT": 12,
+    "SFC": 30,
+    "UST": 2,
+    "WSJ": 36
   },
-  "upload_timestamp_pst": "Jul 23, 2026 12:48 PM PST"
+  "total_stops": 201,
+  "upload_timestamp_pst": "Jul 23, 2026 01:57 PM PST"
 }

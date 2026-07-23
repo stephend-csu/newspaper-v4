@@ -397,7 +397,7 @@
       problem_addresses: []
     };
 
-    let selectedItems = new Set(); // Stores string keys like "valid_0", "prob_1"
+    let selectedItems = new Set();
 
     window.addEventListener('DOMContentLoaded', () => {
       const stored = localStorage.getItem('extracted_route_data');
@@ -591,7 +591,6 @@
         let targetList = section === 'prob' ? routeData.problem_addresses : routeData.valid_addresses;
         if (targetList && targetList[index]) {
           let currentAddr = targetList[index].full_address || targetList[index].raw_address;
-          // Extract street part before city comma
           let streetPart = currentAddr.split(',')[0].trim();
           targetList[index].full_address = `${streetPart}, ${targetCity}, CA`;
           targetList[index].city = targetCity;

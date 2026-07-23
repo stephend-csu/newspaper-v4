@@ -18,12 +18,14 @@ def main_page():
     return send_from_directory('.', 'index.html')
 
 @app.route('/upload')
+@app.route('/upload.html')
 def upload_page():
-    return render_template('upload.html')
+    return send_from_directory('.', 'upload.html')
 
 @app.route('/confirm')
+@app.route('/confirm.html')
 def confirm_page():
-    return render_template('confirm.html')
+    return send_from_directory('.', 'confirm.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):

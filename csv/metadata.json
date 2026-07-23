@@ -1,6 +1,6 @@
 {
-  "addresses_found": 200,
-  "addresses_not_found": 1,
+  "addresses_found": 201,
+  "addresses_not_found": 0,
   "newspaper_counts": {
     "CAP": 3,
     "EBT": 156,
@@ -9,6 +9,6 @@
     "UST": 2,
     "WSJ": 36
   },
-  "total_stops": 201,
-  "upload_timestamp_pst": "Jul 23, 2026 01:57 PM PST"
+  "total_stops": 202,
+  "upload_timestamp_pst": "Jul 23, 2026 02:47 PM PST"
 }

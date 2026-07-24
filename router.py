@@ -317,7 +317,7 @@ def generate_chapters_csv(route_waypoints):
             'Media Credit': 'Open in Maps',
             'Media Credit Link': maps_link,
             'Description': desc,
-            'Zoom': 20,
+            'Zoom': 22,
             'Marker': 'Numbered',
             'Marker Color': marker_color,
             'Location': '',

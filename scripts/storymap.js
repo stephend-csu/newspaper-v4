@@ -314,8 +314,9 @@ $(window).on('load', function() {
       $(btnElem).addClass('pushed').html('<span class="cute-triangle">▾</span> ✓');
       var targetDiv = $('#container' + targetIdx);
       if (targetDiv.length) {
+        var scrollPos = targetDiv.offset().top - $('#contents').offset().top + $('#contents').scrollTop() - 20;
         $('#contents').animate({
-          scrollTop: targetDiv.offset().top + $('#contents').scrollTop() - 100
+          scrollTop: scrollPos
         }, 500);
       }
     };

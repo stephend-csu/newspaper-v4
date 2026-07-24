@@ -22,8 +22,8 @@ MANDATORY_ADDRESS = {
     'full_address': '923 Pacific Ct, Walnut Creek, CA',
     'city': 'Walnut Creek',
     'newspapers': ['EBT'],
-    'lat': 37.934891,
-    'lon': -122.012541
+    'lat': None,
+    'lon': None
 }
 
 def ensure_single_address_coords(address_obj):

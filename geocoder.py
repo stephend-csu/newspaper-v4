@@ -26,7 +26,7 @@ def geocode_address_candidate(address_str):
     # Primary: ArcGIS World Geocoder (Fresh live lookup with retry)
     for attempt in range(2):
         try:
-            url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
+            url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1&outFields=City"
             resp = http_session.get(url, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
@@ -35,17 +35,24 @@ def geocode_address_candidate(address_str):
                     loc = c['location']
                     display = c.get('address', address_clean)
                     
-                    city_found = None
-                    for city in CONTRA_COSTA_CITIES:
-                        if city.lower() in display.lower():
-                            city_found = city
-                            break
+                    attrs = c.get('attributes', {})
+                    city_found = attrs.get('City')
+                    
+                    if not city_found:
+                        for city in CONTRA_COSTA_CITIES:
+                            if city.lower() in display.lower():
+                                city_found = city
+                                break
+                    
+                    # Reject if the resolved city is not in Contra Costa County
+                    if not city_found or city_found not in CONTRA_COSTA_CITIES:
+                        return None
                             
                     return {
                         'lat': float(loc['y']),
                         'lon': float(loc['x']),
                         'display_name': display,
-                        'city': city_found or 'Walnut Creek',
+                        'city': city_found,
                         'county': 'Contra Costa County'
                     }
         except Exception as e:
@@ -62,7 +69,11 @@ def geocode_address_candidate(address_str):
             if data:
                 item = data[0]
                 addr = item.get('address', {})
-                city = addr.get('city') or addr.get('town') or addr.get('village') or 'Walnut Creek'
+                city = addr.get('city') or addr.get('town') or addr.get('village')
+                
+                if not city or city not in CONTRA_COSTA_CITIES:
+                    return None
+                    
                 return {
                     'lat': float(item['lat']),
                     'lon': float(item['lon']),
@@ -106,11 +117,11 @@ def validate_and_classify_addresses(address_items):
                 found_city = c
                 break
 
-        lookup_str = raw_addr if found_city or "CA" in raw_addr else f"{raw_addr}, CA"
+        lookup_str = raw_addr if found_city or "CA" in raw_addr else f"{raw_addr}, Contra Costa County, CA"
         geo = geocode_address_candidate(lookup_str)
 
         if geo and geo.get('lat') and geo.get('lon'):
-            city_name = found_city or geo.get('city') or 'Walnut Creek'
+            city_name = geo.get('city')
             
             if found_city:
                 clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"

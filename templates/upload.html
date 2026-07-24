@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Page</title>
+  <title>PDF Upload</title>
   <style>
     * {
       box-sizing: border-box;
@@ -21,7 +21,7 @@
       padding: 40px 20px;
     }
     .container {
-      max-width: 800px;
+      max-width: 850px;
       width: 100%;
     }
     h1 {
@@ -98,20 +98,22 @@
       background-color: #181818;
       border: 1px solid #2a2a2a;
       border-radius: 8px;
-      padding: 24px;
+      padding: 26px;
       margin-top: 40px;
     }
     .api-section h2 {
-      font-size: 1.2rem;
-      font-weight: 600;
+      font-size: 1.25rem;
+      font-weight: 700;
       color: #ffffff;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
     }
     .api-card {
-      margin-bottom: 16px;
-      padding-bottom: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
       border-bottom: 1px solid #262626;
     }
     .api-card:last-child {
@@ -119,16 +121,34 @@
       padding-bottom: 0;
       border-bottom: none;
     }
+    .api-step {
+      font-weight: 700;
+      color: #63b3ed;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
     .api-name {
       font-weight: 600;
       color: #ffffff;
-      font-size: 0.95rem;
-      margin-bottom: 4px;
+      font-size: 1.05rem;
+      margin-bottom: 6px;
     }
     .api-desc {
-      font-size: 0.85rem;
-      color: #999999;
-      line-height: 1.5;
+      font-size: 0.9rem;
+      color: #a0aec0;
+      line-height: 1.6;
+    }
+    .api-tech {
+      display: inline-block;
+      background: #252a31;
+      color: #e2e8f0;
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+      font-family: monospace;
     }
     .nav-links {
       margin-top: 20px;
@@ -148,13 +168,13 @@
 <body>
   <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h1>Upload Page</h1>
+      <h1>PDF Upload</h1>
       <div class="nav-links">
         <a href="https://stephend-csu.github.io/newspaper-v4/">Main Map Page</a>
         <a href="/confirmation">Confirmation Screen</a>
       </div>
     </div>
-    <div class="subtitle">Upload your delivery route PDF to extract addresses and compute optimized routes.</div>
+    <div class="subtitle">Upload your delivery route PDF to extract addresses and compute optimized driving routes.</div>
 
     <div class="dropzone" id="dropzone">
       <div class="dropzone-icon">📄</div>
@@ -166,16 +186,41 @@
     </div>
 
     <div class="api-section">
-      <h2>Address APIs Overview</h2>
+      <h2>Address Processing Pipeline & APIs</h2>
       
       <div class="api-card">
-        <div class="api-name">1. OpenStreetMap Nominatim & Census Geocoder API</div>
-        <div class="api-desc">Resolves delivery street addresses against official public geographic databases to determine geographic coordinates (latitude and longitude) and verify candidate cities in Contra Costa County, CA.</div>
+        <div class="api-step">Step 1 — Data Extraction</div>
+        <div class="api-name">PDF Address & Newspaper Parser</div>
+        <div class="api-desc">Parses layout text from the uploaded PDF. Extracts house numbers, street headers, and newspaper codes (EBT, WSJ, SFC, NYT, CAP, UST, WLD, STD, LAT, FT, IBD, BAR) while discarding route metadata codes like 7D or 1.</div>
+        <div class="api-tech">Technology: Python pypdf + Regular Expressions</div>
       </div>
 
       <div class="api-card">
-        <div class="api-name">2. OSRM (Open Source Routing Machine) API</div>
-        <div class="api-desc">Computes real-world road network driving distances between delivery addresses, solves Traveling Salesperson Problem (TSP) address ordering starting from 2505 Dean Lesher Dr, Concord, CA, and calculates driving leg miles between addresses.</div>
+        <div class="api-step">Step 2 — Address Validation & Classification</div>
+        <div class="api-name">County Address Classifier</div>
+        <div class="api-desc">Formats raw extracted street lines without city names and validates them against official Contra Costa County city boundaries (Walnut Creek, Concord, Pleasant Hill, Lafayette, Danville, San Ramon, etc.). Discovers true cities via ArcGIS geocoding without default fallbacks.</div>
+        <div class="api-tech">Module: geocoder.py (validate_and_classify_addresses)</div>
+      </div>
+
+      <div class="api-card">
+        <div class="api-step">Step 3 — Geocoding</div>
+        <div class="api-name">ArcGIS World Geocoding Service API</div>
+        <div class="api-desc">Queries the ArcGIS World Geocode REST API to determine exact latitude and longitude geographic coordinates for every valid delivery address. Operates live without hardcoded coordinate fallbacks to ensure precise pin placements.</div>
+        <div class="api-tech">API: geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer</div>
+      </div>
+
+      <div class="api-card">
+        <div class="api-step">Step 4 — Route Optimization & Street Clustering</div>
+        <div class="api-name">OSRM API & Street-Clustering Engine</div>
+        <div class="api-desc">Computes real-world road network driving distances starting from 2505 Dean Lesher Dr, Concord, CA (including mandatory stop 923 Pacific Ct). Solves the Traveling Salesperson Problem (TSP), calculates leg miles between stops, and clusters multi-address streets into consecutive ascending or descending house-number blocks.</div>
+        <div class="api-tech">API: router.project-osrm.org + Local 2-Opt TSP & Street-Clustering Engine</div>
+      </div>
+
+      <div class="api-card">
+        <div class="api-step">Step 5 — Repository Deployment</div>
+        <div class="api-name">GitHub REST API Sync</div>
+        <div class="api-desc">Commits the newly generated Chapters.csv route dataset and metadata.json directly to the GitHub repository (main branch) in a single atomic commit via Git Trees API, triggering a clean GitHub Pages build with a PST upload timestamp.</div>
+        <div class="api-tech">API: api.github.com/repos/stephend-csu/newspaper-v4/git/trees</div>
       </div>
     </div>
   </div>

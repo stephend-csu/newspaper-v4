@@ -1,7 +1,6 @@
 import requests
 import urllib.parse
 import re
-from concurrent.futures import ThreadPoolExecutor
 
 CONTRA_COSTA_CITIES = [
     'Walnut Creek', 'Concord', 'Pleasant Hill', 'Martinez', 'Lafayette',
@@ -75,13 +74,13 @@ def geocode_address_candidate(address_str):
 def validate_and_classify_addresses(address_items):
     """
     Takes list of dicts with 'raw_address' and 'newspapers'.
-    Discovers true Contra Costa County city via ArcGIS geocoding.
-    Never defaults to Walnut Creek.
+    Instant non-blocking structural validation for fast HTTP upload response.
+    ArcGIS geocoding runs in background job to discover true cities & coordinates.
     """
     valid_list = []
     problem_list = []
     
-    def process_item(item):
+    for item in address_items:
         raw_addr = item['raw_address'].strip()
         papers = item['newspapers']
         
@@ -90,12 +89,13 @@ def validate_and_classify_addresses(address_items):
         has_street = len(words) >= 2
         
         if not has_number or not has_street:
-            return None, {
+            problem_list.append({
                 'raw_address': raw_addr,
                 'full_address': f"{raw_addr}, CA",
                 'newspapers': papers,
                 'reason': 'Malformed address string (missing house number or street)'
-            }
+            })
+            continue
 
         found_city = None
         for c in CONTRA_COSTA_CITIES:
@@ -103,41 +103,21 @@ def validate_and_classify_addresses(address_items):
                 found_city = c
                 break
 
-        lookup_str = raw_addr if found_city or "CA" in raw_addr else f"{raw_addr}, CA"
-        geo = geocode_address_candidate(lookup_str)
-
-        if geo and geo.get('lat') and geo.get('lon'):
-            city_name = found_city or geo.get('city') or 'Walnut Creek'
-            
-            if found_city:
-                clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"
-            else:
-                clean_full = f"{raw_addr}, {city_name}, CA"
-
-            return {
-                'raw_address': raw_addr,
-                'full_address': clean_full,
-                'city': city_name,
-                'newspapers': papers,
-                'lat': float(geo['lat']),
-                'lon': float(geo['lon'])
-            }, None
+        if found_city:
+            clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"
+            city_name = found_city
         else:
-            return None, {
-                'raw_address': raw_addr,
-                'full_address': f"{raw_addr}, CA",
-                'newspapers': papers,
-                'reason': 'Could not verify geocode coordinates in Contra Costa County'
-            }
+            clean_full = f"{raw_addr}, CA"
+            city_name = None
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(process_item, address_items))
-
-    for v, p in results:
-        if v:
-            valid_list.append(v)
-        if p:
-            problem_list.append(p)
+        valid_list.append({
+            'raw_address': raw_addr,
+            'full_address': clean_full,
+            'city': city_name,
+            'newspapers': papers,
+            'lat': None,
+            'lon': None
+        })
 
     return valid_list, problem_list
 

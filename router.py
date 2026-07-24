@@ -40,8 +40,10 @@ def ensure_single_address_coords(address_obj):
     if geo and geo.get('lat') and geo.get('lon'):
         address_obj['lat'] = geo['lat']
         address_obj['lon'] = geo['lon']
-        if not address_obj.get('city'):
-            address_obj['city'] = geo.get('city', 'Walnut Creek')
+        discovered_city = geo.get('city') or 'Walnut Creek'
+        address_obj['city'] = discovered_city
+        if not address_obj.get('city_manually_edited'):
+            address_obj['full_address'] = geo.get('display_name') or f"{raw}, {discovered_city}, CA"
     else:
         hash_val = sum(ord(c) for c in (full or raw)) % 100
         address_obj['lat'] = 37.9300 + (hash_val * 0.00015)

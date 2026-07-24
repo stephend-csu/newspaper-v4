@@ -283,21 +283,44 @@
         if (data.error) {
           statusMsg.style.color = '#ff6b6b';
           statusMsg.textContent = 'Error: ' + data.error;
-        } else {
-          statusMsg.style.color = '#51cf66';
-          statusMsg.textContent = `Extracted ${data.total_extracted} addresses! Redirecting to Confirmation Screen...`;
-          
-          localStorage.setItem('extracted_route_data', JSON.stringify(data));
-          
-          setTimeout(() => {
-            window.location.href = '/confirmation';
-          }, 1000);
+        } else if (data.job_id) {
+          pollUploadJob(data.job_id);
         }
       })
       .catch(err => {
         statusMsg.style.color = '#ff6b6b';
         statusMsg.textContent = 'Failed to upload PDF: ' + err;
       });
+    }
+
+    function pollUploadJob(jobId) {
+      fetch('/api/job-status/' + jobId)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            statusMsg.style.color = '#ff6b6b';
+            statusMsg.textContent = 'Error: ' + data.error;
+            return;
+          }
+          if (data.status === 'error') {
+            statusMsg.style.color = '#ff6b6b';
+            statusMsg.textContent = 'Error: ' + data.message;
+          } else if (data.status === 'completed') {
+            statusMsg.style.color = '#51cf66';
+            statusMsg.textContent = `Extracted ${data.data.total_extracted} addresses! Redirecting to Confirmation Screen...`;
+            localStorage.setItem('extracted_route_data', JSON.stringify(data.data));
+            setTimeout(() => {
+              window.location.href = '/confirmation';
+            }, 1000);
+          } else {
+            statusMsg.textContent = data.message || 'Extracting and geocoding addresses... This may take up to 30 seconds. Please wait...';
+            setTimeout(() => pollUploadJob(jobId), 2000);
+          }
+        })
+        .catch(err => {
+          statusMsg.style.color = '#ff6b6b';
+          statusMsg.textContent = 'Failed to poll status: ' + err;
+        });
     }
   </script>
 </body>

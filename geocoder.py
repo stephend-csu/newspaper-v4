@@ -27,7 +27,7 @@ def geocode_address_candidate(address_str):
     for attempt in range(2):
         try:
             url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
-            resp = http_session.get(url, timeout=6)
+            resp = http_session.get(url, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get('candidates'):
@@ -133,7 +133,7 @@ def validate_and_classify_addresses(address_items):
                 'reason': 'Could not verify geocode coordinates in Contra Costa County'
             }
 
-    with ThreadPoolExecutor(max_workers=30) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         results = list(executor.map(process_item, address_items))
 
     for v, p in results:

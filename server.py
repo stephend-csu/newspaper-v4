@@ -29,6 +29,30 @@ def confirm_page():
 def serve_static(filename):
     return send_from_directory('.', filename)
 
+def run_upload_geocoding_job(job_id, extracted_items):
+    try:
+        JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Validating and geocoding addresses via ArcGIS...'}
+        valid_list, problem_list = validate_and_classify_addresses(extracted_items)
+        
+        newspaper_counts = {}
+        for item in extracted_items:
+            for paper in item.get('newspapers', []):
+                newspaper_counts[paper] = newspaper_counts.get(paper, 0) + 1
+                
+        JOB_STATUSES[job_id] = {
+            'status': 'completed',
+            'data': {
+                'success': True,
+                'newspaper_counts': newspaper_counts,
+                'valid_addresses': valid_list,
+                'problem_addresses': problem_list,
+                'total_extracted': len(extracted_items)
+            }
+        }
+    except Exception as e:
+        print(f"Job {job_id} geocoding error: {e}")
+        JOB_STATUSES[job_id] = {'status': 'error', 'message': f'Geocoding failed: {str(e)}'}
+
 @app.route('/api/upload-pdf', methods=['POST'])
 def api_upload_pdf():
     if 'pdf_file' not in request.files:
@@ -40,21 +64,14 @@ def api_upload_pdf():
         
     try:
         extracted_items = extract_addresses_from_pdf_stream(file.stream)
-        valid_list, problem_list = validate_and_classify_addresses(extracted_items)
+        job_id = str(uuid.uuid4())
+        JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'PDF extracted. Starting geocoding...'}
         
-        # Calculate count of each newspaper (across both valid and problem addresses)
-        newspaper_counts = {}
-        for item in extracted_items:
-            for paper in item.get('newspapers', []):
-                newspaper_counts[paper] = newspaper_counts.get(paper, 0) + 1
-                
-        return jsonify({
-            'success': True,
-            'newspaper_counts': newspaper_counts,
-            'valid_addresses': valid_list,
-            'problem_addresses': problem_list,
-            'total_extracted': len(extracted_items)
-        })
+        thread = threading.Thread(target=run_upload_geocoding_job, args=(job_id, extracted_items))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'success': True, 'job_id': job_id})
     except Exception as e:
         print(f"Error processing PDF: {e}")
         return jsonify({'error': f"Failed to process PDF: {str(e)}"}), 500

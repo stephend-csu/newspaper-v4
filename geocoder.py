@@ -1,6 +1,7 @@
 import requests
 import urllib.parse
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 CONTRA_COSTA_CITIES = [
     'Walnut Creek', 'Concord', 'Pleasant Hill', 'Martinez', 'Lafayette',
@@ -19,32 +20,34 @@ def geocode_address_candidate(address_str):
         
     address_clean = address_str.strip()
         
-    # Primary: ArcGIS World Geocoder (Fresh live lookup)
-    try:
-        url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            if data.get('candidates'):
-                c = data['candidates'][0]
-                loc = c['location']
-                display = c.get('address', address_clean)
-                
-                city_found = 'Walnut Creek'
-                for city in CONTRA_COSTA_CITIES:
-                    if city.lower() in display.lower():
-                        city_found = city
-                        break
-                        
-                return {
-                    'lat': float(loc['y']),
-                    'lon': float(loc['x']),
-                    'display_name': display,
-                    'city': city_found,
-                    'county': 'Contra Costa County'
-                }
-    except Exception as e:
-        print(f"ArcGIS live geocoding error for '{address_clean}': {e}")
+    # Primary: ArcGIS World Geocoder (Fresh live lookup with retry)
+    for attempt in range(2):
+        try:
+            url = f"https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine={urllib.parse.quote(address_clean)}&maxLocations=1"
+            resp = requests.get(url, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('candidates'):
+                    c = data['candidates'][0]
+                    loc = c['location']
+                    display = c.get('address', address_clean)
+                    
+                    city_found = None
+                    for city in CONTRA_COSTA_CITIES:
+                        if city.lower() in display.lower():
+                            city_found = city
+                            break
+                            
+                    return {
+                        'lat': float(loc['y']),
+                        'lon': float(loc['x']),
+                        'display_name': display,
+                        'city': city_found or 'Walnut Creek',
+                        'county': 'Contra Costa County'
+                    }
+        except Exception as e:
+            if attempt == 1:
+                print(f"ArcGIS live geocoding error for '{address_clean}': {e}")
 
     # Secondary Fallback: Nominatim
     try:
@@ -72,50 +75,70 @@ def geocode_address_candidate(address_str):
 def validate_and_classify_addresses(address_items):
     """
     Takes list of dicts with 'raw_address' and 'newspapers'.
+    Discovers true Contra Costa County city via ArcGIS geocoding.
+    Never defaults to Walnut Creek.
     """
     valid_list = []
     problem_list = []
     
-    for item in address_items:
+    def process_item(item):
         raw_addr = item['raw_address'].strip()
         papers = item['newspapers']
         
-        found_city = None
-        for c in CONTRA_COSTA_CITIES:
-            if c.lower() in raw_addr.lower():
-                found_city = c
-                break
-                
         has_number = bool(re.match(r'^\d+', raw_addr))
         words = raw_addr.split()
         has_street = len(words) >= 2
         
         if not has_number or not has_street:
-            problem_list.append({
+            return None, {
                 'raw_address': raw_addr,
-                'full_address': f"{raw_addr}, Walnut Creek, CA",
-                'possible_cities': ['Walnut Creek', 'Concord'],
+                'full_address': f"{raw_addr}, CA",
                 'newspapers': papers,
                 'reason': 'Malformed address string (missing house number or street)'
-            })
-            continue
+            }
+
+        found_city = None
+        for c in CONTRA_COSTA_CITIES:
+            if c.lower() in raw_addr.lower():
+                found_city = c
+                break
+
+        lookup_str = raw_addr if found_city or "CA" in raw_addr else f"{raw_addr}, CA"
+        geo = geocode_address_candidate(lookup_str)
+
+        if geo and geo.get('lat') and geo.get('lon'):
+            city_name = found_city or geo.get('city') or 'Walnut Creek'
             
-        city_name = found_city or 'Walnut Creek'
-        
-        if found_city:
-            clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"
+            if found_city:
+                clean_full = raw_addr if "CA" in raw_addr else f"{raw_addr}, CA"
+            else:
+                clean_full = f"{raw_addr}, {city_name}, CA"
+
+            return {
+                'raw_address': raw_addr,
+                'full_address': clean_full,
+                'city': city_name,
+                'newspapers': papers,
+                'lat': float(geo['lat']),
+                'lon': float(geo['lon'])
+            }, None
         else:
-            clean_full = f"{raw_addr}, {city_name}, CA"
-            
-        valid_list.append({
-            'raw_address': raw_addr,
-            'full_address': clean_full,
-            'city': city_name,
-            'newspapers': papers,
-            'lat': None,
-            'lon': None
-        })
-            
+            return None, {
+                'raw_address': raw_addr,
+                'full_address': f"{raw_addr}, CA",
+                'newspapers': papers,
+                'reason': 'Could not verify geocode coordinates in Contra Costa County'
+            }
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(executor.map(process_item, address_items))
+
+    for v, p in results:
+        if v:
+            valid_list.append(v)
+        if p:
+            problem_list.append(p)
+
     return valid_list, problem_list
 
 def verify_address_osrm(lat, lon):

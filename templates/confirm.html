@@ -543,10 +543,11 @@
 
     function saveEdit(section, index) {
       const val = document.getElementById(`input_${section}_${index}`).value.trim();
-      if (section === 'prob' && routeData.problem_addresses[index]) {
-        routeData.problem_addresses[index].full_address = val;
-      } else if (section === 'valid' && routeData.valid_addresses[index]) {
-        routeData.valid_addresses[index].full_address = val;
+      let item = section === 'prob' ? routeData.problem_addresses[index] : routeData.valid_addresses[index];
+      if (item) {
+        item.full_address = val;
+        item.lat = null;
+        item.lon = null;
       }
       saveState();
       renderAll();
@@ -594,6 +595,8 @@
           let streetPart = currentAddr.split(',')[0].trim();
           targetList[index].full_address = `${streetPart}, ${targetCity}, CA`;
           targetList[index].city = targetCity;
+          targetList[index].lat = null;
+          targetList[index].lon = null;
         }
       });
 

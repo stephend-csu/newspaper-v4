@@ -311,7 +311,7 @@
       <h1>Confirmation Screen</h1>
       <div class="nav-links">
         <a href="https://newspaper-v4.onrender.com/">← Upload Page</a>
-        <a href="https://stephend-csu.github.io/newspaper-v4/">Main Map Page</a>
+        <a href="/map">Main Map Page</a>
       </div>
     </header>
 
@@ -684,7 +684,7 @@
               clearInterval(interval);
               statusText.textContent = 'Route completed and uploaded to GitHub! Redirecting to main map...';
               setTimeout(() => {
-                window.location.href = 'https://stephend-csu.github.io/newspaper-v4/';
+                window.location.href = '/map';
               }, 1200);
             } else if (data.status === 'error') {
               clearInterval(interval);

@@ -25,6 +25,10 @@ def upload_page():
 def confirm_page():
     return send_from_directory('.', 'confirm.html')
 
+@app.route('/map')
+def map_page():
+    return send_from_directory('.', 'index.html')
+
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory('.', filename)

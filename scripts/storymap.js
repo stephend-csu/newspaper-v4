@@ -233,6 +233,7 @@ $(window).on('load', function() {
     // Address 1 corresponds to container 2, Address 2 to container 3, etc.
     // -------------------------------------------------------------
     var markers = [null, null];
+    var currentRouteControl = null;
     var chapterCount = 0;
 
     for (var idx = 0; idx < chapters.length; idx++) {
@@ -357,7 +358,38 @@ $(window).on('load', function() {
 
           if (markers[i]) {
             var m = markers[i];
-            var zoomLevel = m['_zoom'] || 19;
+            
+            if (currentRouteControl) {
+              map.removeControl(currentRouteControl);
+              currentRouteControl = null;
+            }
+            
+            var prevMarker = null;
+            for (var j = i - 1; j >= 0; j--) {
+              if (markers[j]) {
+                prevMarker = markers[j];
+                break;
+              }
+            }
+            
+            if (prevMarker) {
+              currentRouteControl = L.Routing.control({
+                waypoints: [
+                  prevMarker.getLatLng(),
+                  m.getLatLng()
+                ],
+                fitSelectedRoutes: false,
+                show: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                lineOptions: {
+                  styles: [{color: '#3182ce', opacity: 0.8, weight: 6}]
+                },
+                createMarker: function() { return null; } // Prevent it from dropping extra markers
+              }).addTo(map);
+            }
+
+            var zoomLevel = m['_zoom'] || 18;
             map.flyTo(m.getLatLng(), zoomLevel, { animate: true, duration: 2 });
           }
           break;

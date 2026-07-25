@@ -76,7 +76,7 @@ $(window).on('load', function() {
   function addBaseMap() {
     var basemap = trySetting('_tileProvider', 'Stamen.TonerLite');
     L.tileLayer.provider(basemap, {
-      maxZoom: 18,
+      maxZoom: 19,
       apiKey: trySetting('_tileProviderApiKey', ''),
       apikey: trySetting('_tileProviderApiKey', ''),
       key: trySetting('_tileProviderApiKey', ''),
@@ -245,17 +245,17 @@ $(window).on('load', function() {
         var lon = parseFloat(c['Longitude']);
         chapterCount += 1;
 
-        markers.push(
-          L.marker([lat, lon], {
-            icon: L.ExtraMarkers.icon({
-              icon: 'fa-number',
-              number: c['Marker'] === 'Numbered' ? chapterCount : (c['Marker'] === 'Plain' ? '' : c['Marker']),
-              markerColor: c['Marker Color'] || 'blue'
-            }),
-            opacity: c['Marker'] === 'Hidden' ? 0 : 0.9,
-            interactive: c['Marker'] === 'Hidden' ? false : true,
-          })
-        );
+        var m = L.marker([lat, lon], {
+          icon: L.ExtraMarkers.icon({
+            icon: 'fa-number',
+            number: c['Marker'] === 'Numbered' ? chapterCount : (c['Marker'] === 'Plain' ? '' : c['Marker']),
+            markerColor: c['Marker Color'] || 'blue'
+          }),
+          opacity: c['Marker'] === 'Hidden' ? 0 : 0.9,
+          interactive: c['Marker'] === 'Hidden' ? false : true,
+        });
+        m['_zoom'] = parseInt(c['Zoom']) || 19;
+        markers.push(m);
       } else {
         markers.push(null);
       }
@@ -357,7 +357,8 @@ $(window).on('load', function() {
 
           if (markers[i]) {
             var m = markers[i];
-            map.flyTo(m.getLatLng(), CHAPTER_ZOOM, { animate: true, duration: 2 });
+            var zoomLevel = m['_zoom'] || 19;
+            map.flyTo(m.getLatLng(), zoomLevel, { animate: true, duration: 2 });
           }
           break;
         }

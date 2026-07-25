@@ -1,5 +1,5 @@
 import re
-import pypdf
+import pdfplumber
 
 # Comprehensive list of Newspaper codes
 KNOWN_NEWSPAPERS = ['EBT', 'WSJ', 'CAP', 'NYT', 'SFC', 'UST', 'WLD', 'STD', 'LAT', 'FT', 'IBD', 'BAR']
@@ -73,14 +73,14 @@ def parse_pdf_text(text: str):
 
 def extract_addresses_from_pdf_stream(stream):
     """
-    Extracts addresses and newspapers from a PDF file-like stream using pypdf.
+    Extracts addresses and newspapers from a PDF file-like stream using pdfplumber.
     """
-    reader = pypdf.PdfReader(stream)
     full_text = ""
-    for page in reader.pages:
-        txt = page.extract_text()
-        if txt:
-            full_text += txt + "\n"
+    with pdfplumber.open(stream) as pdf:
+        for page in pdf.pages:
+            txt = page.extract_text()
+            if txt:
+                full_text += txt + "\n"
             
     parsed = parse_pdf_text(full_text)
     

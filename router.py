@@ -289,7 +289,45 @@ def optimize_road_route(confirmed_addresses):
     # Apply street-clustering post-processing reordering
     route_waypoints = cluster_streets_post_process(route_waypoints)
         
-    return route_waypoints
+    # Fetch full route geometries for each leg
+    route_segments = []
+    chunk_size = 50
+    for i in range(0, len(route_waypoints) - 1, chunk_size - 1):
+        chunk = route_waypoints[i:i + chunk_size]
+        coords_str = ";".join([f"{item['lon']:.6f},{item['lat']:.6f}" for item in chunk])
+        url = f"https://router.project-osrm.org/route/v1/driving/{coords_str}?overview=false&steps=true&geometries=geojson"
+        
+        try:
+            resp = requests.get(url, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('routes'):
+                    legs = data['routes'][0].get('legs', [])
+                    for leg in legs:
+                        leg_coords = []
+                        for step in leg.get('steps', []):
+                            geom = step.get('geometry', {})
+                            if geom and geom.get('type') == 'LineString':
+                                for coord in geom.get('coordinates', []):
+                                    leg_coords.append([coord[1], coord[0]])
+                        route_segments.append(leg_coords)
+            else:
+                for _ in range(len(chunk) - 1):
+                    route_segments.append([])
+        except Exception as e:
+            print(f"OSRM Geometry API error: {e}")
+            for _ in range(len(chunk) - 1):
+                route_segments.append([])
+    
+    # Fallback to straight lines for missing or failed segments
+    for i in range(len(route_segments)):
+        if not route_segments[i]:
+            route_segments[i] = [
+                [route_waypoints[i]['lat'], route_waypoints[i]['lon']],
+                [route_waypoints[i+1]['lat'], route_waypoints[i+1]['lon']]
+            ]
+
+    return route_waypoints, route_segments
 
 def generate_chapters_csv(route_waypoints):
     fieldnames = [

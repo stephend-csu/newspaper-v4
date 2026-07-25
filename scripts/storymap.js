@@ -115,6 +115,7 @@ $(window).on('load', function() {
   function initMap(options, chapters, metadata) {
     createDocumentSettings(options);
     var chapterContainerMargin = 70;
+    var routeSegments = (metadata && metadata.route_segments) ? metadata.route_segments : [];
 
     document.title = getSetting('_mapTitle');
     $('#header').append('<h1>' + (getSetting('_mapTitle') || '') + '</h1>');
@@ -360,32 +361,16 @@ $(window).on('load', function() {
             var m = markers[i];
             
             if (currentRouteControl) {
-              map.removeControl(currentRouteControl);
+              map.removeLayer(currentRouteControl);
               currentRouteControl = null;
             }
             
-            var prevMarker = null;
-            for (var j = i - 1; j >= 0; j--) {
-              if (markers[j]) {
-                prevMarker = markers[j];
-                break;
-              }
-            }
-            
-            if (prevMarker) {
-              currentRouteControl = L.Routing.control({
-                waypoints: [
-                  prevMarker.getLatLng(),
-                  m.getLatLng()
-                ],
-                fitSelectedRoutes: false,
-                show: false,
-                addWaypoints: false,
-                draggableWaypoints: false,
-                lineOptions: {
-                  styles: [{color: '#3182ce', opacity: 0.8, weight: 6}]
-                },
-                createMarker: function() { return null; } // Prevent it from dropping extra markers
+            var segmentIdx = i - 3;
+            if (segmentIdx >= 0 && routeSegments && routeSegments[segmentIdx] && routeSegments[segmentIdx].length > 0) {
+              currentRouteControl = L.polyline(routeSegments[segmentIdx], {
+                color: '#3182ce',
+                opacity: 0.8,
+                weight: 6
               }).addTo(map);
             }
 

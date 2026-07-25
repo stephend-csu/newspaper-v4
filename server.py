@@ -91,7 +91,7 @@ def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, new
         JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Optimizing road route...'}
         
         # 1. Optimize route using OSRM
-        route_waypoints = optimize_road_route(confirmed_addresses)
+        route_waypoints, route_segments = optimize_road_route(confirmed_addresses)
         
         JOB_STATUSES[job_id]['message'] = 'Generating Chapters.csv...'
         
@@ -106,7 +106,8 @@ def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, new
             'addresses_not_found': unconfirmed_count,
             'newspaper_counts': newspaper_counts,
             'total_stops': len(route_waypoints),
-            'not_routed_addresses': not_routed_addresses or []
+            'not_routed_addresses': not_routed_addresses or [],
+            'route_segments': route_segments
         }
         
         # 4. Sync with GitHub

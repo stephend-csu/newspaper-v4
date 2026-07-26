@@ -5,18 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Confirmation Screen</title>
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
-  <style>
+    <style>
+    /* Minimalist Japanese-inspired aesthetic */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap');
+    
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #121417;
-      color: #e2e8f0;
-      padding: 30px 20px;
+      font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f7f7f7;
+      color: #333333;
+      padding: 24px 20px;
       min-height: 100vh;
+      line-height: 1.5;
     }
     .container {
       max-width: 960px;
@@ -27,78 +31,121 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
-      border-bottom: 1px solid #2d3748;
+      border-bottom: 1px solid #e2e2e2;
       padding-bottom: 16px;
     }
     h1 {
-      font-size: 2.2rem;
-      color: #ffffff;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+      font-size: 1.75rem;
+      color: #222222;
+      font-weight: 600;
+      letter-spacing: -0.02em;
     }
     .nav-links a {
       margin-left: 16px;
-      color: #63b3ed;
+      color: #666666;
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s;
     }
     .nav-links a:hover {
-      text-decoration: underline;
+      color: #111111;
     }
-
+    
     /* Summary Cards */
     .summary-card {
-      background: #1e2227;
-      border: 1px solid #2d3748;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 24px;
+      background: #ffffff;
+      border: 1px solid #eaeaea;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .summary-title {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: #cbd5e0;
-      margin-bottom: 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #777777;
+      margin-bottom: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.05em;
     }
     .summary-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 10px;
     }
     .paper-badge {
-      background: #2d3748;
-      border-radius: 6px;
-      padding: 8px 14px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      color: #63b3ed;
+      background: #f4f4f4;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: #444444;
       display: flex;
       align-items: center;
-      gap: 8px;
-      border: 1px solid #4a5568;
+      gap: 6px;
+      border: 1px solid #e0e0e0;
     }
     .paper-badge .count {
-      background: #3182ce;
-      color: white;
+      background: #cccccc;
+      color: #ffffff;
       border-radius: 12px;
-      padding: 2px 8px;
-      font-size: 0.8rem;
+      padding: 2px 6px;
+      font-size: 0.75rem;
+    }
+
+    /* Table style for address lists */
+    .address-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    .address-table th,
+    .address-table td {
+      border: 1px solid #eaeaea;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    .address-table th {
+      background: #fbfbfb;
+      color: #555555;
+      font-weight: 500;
+    }
+    .address-table tbody tr {
+      background: #ffffff;
+      transition: background 0.15s;
+    }
+    .address-table tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+    .address-table tbody tr:hover {
+      background: #f2f2f2;
+    }
+    .address-table .address-display {
+      font-weight: 500;
+      color: #222222;
+    }
+    .item-checkbox {
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      accent-color: #555555;
     }
 
     /* Batch Edit Bar */
     .batch-bar {
-      background: #252a31;
-      border: 1px solid #3a424e;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
+      background: #ffffff;
+      border: 1px solid #eaeaea;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
       flex-wrap: wrap;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .batch-controls {
       display: flex;
@@ -107,195 +154,166 @@
       flex-wrap: wrap;
     }
     .batch-select {
-      background: #17191d;
-      color: #ffffff;
-      border: 1px solid #4a5568;
-      border-radius: 4px;
-      padding: 8px 12px;
-      font-size: 0.95rem;
+      background: #fdfdfd;
+      color: #333333;
+      border: 1px solid #cccccc;
+      border-radius: 3px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 6px 12px;
+      border-radius: 3px;
+      border: 1px solid transparent;
+      font-weight: 500;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
     }
     .btn-batch {
-      background: #3182ce;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 4px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
+      background: #555555;
+      color: #ffffff;
     }
     .btn-batch:hover {
-      background: #2b6cb0;
+      background: #333333;
+    }
+    .btn-icon {
+      background: transparent;
+      color: #999999;
+      border: 1px solid #e0e0e0;
+      border-radius: 3px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover {
+      background: #f0f0f0;
+      color: #333333;
+    }
+    .btn-save {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-color: #c8e6c9;
+    }
+    .btn-save:hover {
+      background: #c8e6c9;
+    }
+    .btn-valid {
+      background: #ffffff;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+    }
+    .btn-valid:hover {
+      background: #f1f8e9;
+    }
+    .btn-invalid {
+      background: #ffffff;
+      color: #c62828;
+      border: 1px solid #ffcdd2;
+    }
+    .btn-invalid:hover {
+      background: #ffebee;
+    }
+    .btn-primary {
+      background: #333333;
+      color: #ffffff;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 4px;
+      width: 100%;
+      margin-top: 16px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      border: none;
+    }
+    .btn-primary:hover {
+      background: #111111;
     }
 
     /* Sections */
     .section-card {
-      background: #1e2227;
-      border: 1px solid #2d3748;
-      border-radius: 8px;
-      padding: 24px;
+      background: #ffffff;
+      border: 1px solid #eaeaea;
+      border-radius: 4px;
+      padding: 20px;
       margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .section-header {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 14px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      color: #ffffff;
+      color: #333333;
     }
     .problem-header {
-      color: #fc8181;
+      color: #d32f2f;
     }
     .valid-header {
-      color: #68d391;
+      color: #388e3c;
     }
 
     .technical-blurb {
-      background: #252a31;
-      border-left: 3px solid #718096;
+      background: #f9f9f9;
+      border-left: 3px solid #cccccc;
       padding: 12px 16px;
-      border-radius: 4px;
-      font-size: 0.88rem;
-      color: #a0aec0;
-      margin-bottom: 18px;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.85rem;
+      color: #666666;
+      margin-bottom: 16px;
       line-height: 1.5;
     }
-
-    /* Address Rows */
-    .address-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .address-item {
-      background: #17191d;
-      border: 1px solid #2d3748;
-      border-radius: 6px;
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .address-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .address-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-    }
-    .item-checkbox {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-    .address-num {
-      color: #718096;
-      font-size: 0.95rem;
-      font-weight: 700;
-      min-width: 25px;
-    }
-    .address-display {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: #ffffff;
-    }
+    
     .input-edit {
-      background: #262b33;
-      color: #ffffff;
+      background: #ffffff;
+      color: #333333;
       padding: 6px 10px;
-      border: 1px solid #63b3ed;
-      border-radius: 4px;
-      font-size: 1rem;
+      border: 1px solid #cccccc;
+      border-radius: 3px;
+      font-size: 0.9rem;
       flex: 1;
+      font-family: inherit;
     }
-    .btn-icon {
-      background: #2d3748;
-      color: #cbd5e0;
-      border: none;
-      border-radius: 4px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: background 0.2s;
-    }
-    .btn-icon:hover {
-      background: #4a5568;
-      color: #fff;
-    }
-    .btn-save {
-      background: #38a169;
-      color: white;
-    }
-    .btn-save:hover {
-      background: #2f855a;
-    }
-    .btn-group {
-      display: flex;
-      gap: 8px;
-    }
-    .btn {
-      padding: 6px 14px;
-      border-radius: 4px;
-      border: none;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    .btn-valid {
-      background: #38a169;
-      color: white;
-    }
-    .btn-invalid {
-      background: #e53e3e;
-      color: white;
-    }
-    .btn-primary {
-      background: #3182ce;
-      color: white;
-      padding: 14px 28px;
-      font-size: 1.1rem;
-      border-radius: 6px;
-      width: 100%;
-      margin-top: 10px;
-      box-shadow: 0 4px 12px rgba(49,130,206,0.3);
-    }
-    .btn-primary:hover {
-      background: #2b6cb0;
+    .input-edit:focus {
+      outline: none;
+      border-color: #999999;
     }
 
     /* Modal */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
+      background: rgba(255,255,255,0.9);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
       display: none;
+      backdrop-filter: blur(2px);
     }
     .modal-box {
-      background: #1e2227;
-      border: 1px solid #2d3748;
-      border-radius: 8px;
-      padding: 30px;
+      background: #ffffff;
+      border: 1px solid #eaeaea;
+      border-radius: 6px;
+      padding: 32px;
       max-width: 450px;
       width: 90%;
       text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
     .spinner {
-      border: 4px solid #2d3748;
-      border-top: 4px solid #63b3ed;
+      border: 3px solid #f0f0f0;
+      border-top: 3px solid #555555;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       animation: spin 1s linear infinite;
       margin: 20px auto;
     }
@@ -449,40 +467,49 @@
         return;
       }
 
-      list.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'address-item';
+      // Create table
+      const table = document.createElement('table');
+      table.className = 'address-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th></th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody id="problemTableBody"></tbody>`;
+      container.appendChild(table);
+      const tbody = document.getElementById('problemTableBody');
 
+      list.forEach((item, index) => {
         const itemKey = `prob_${index}`;
         const isChecked = selectedItems.has(itemKey) ? 'checked' : '';
-        const num = index + 1;
-        const papers = (item.newspapers || []).join(' ') || 'None';
         const displayAddr = item.full_address || item.raw_address;
 
-        div.innerHTML = `
-          <div class="address-row">
-            <div class="address-left">
-              <input type="checkbox" class="item-checkbox" ${isChecked} onchange="toggleItemSelect('${itemKey}', this.checked)">
-              <span class="address-num">${num}.</span>
-              <div id="text_wrap_prob_${index}" style="display:flex; align-items:center; gap:8px; flex:1;">
-                <span class="address-display" id="display_prob_${index}">${displayAddr}</span>
-                <button class="btn-icon" onclick="enableEdit('prob', ${index})" title="Edit address"><i class="fa fa-pen"></i></button>
-              </div>
-              <div id="edit_wrap_prob_${index}" style="display:none; align-items:center; gap:8px; flex:1;">
-                <input type="text" class="input-edit" id="input_prob_${index}" value="${displayAddr}" />
-                <button class="btn-icon btn-save" onclick="saveEdit('prob', ${index})" title="Save address"><i class="fa fa-check"></i></button>
-              </div>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="width:30px; text-align:center;">
+            <input type="checkbox" class="item-checkbox" ${isChecked} data-key="${itemKey}" onclick="handleCheck(event, this)">
+          </td>
+          <td>
+            <div id="text_wrap_prob_${index}" style="display:flex; align-items:center; gap:8px;">
+              <span class="address-display" id="display_prob_${index}">${displayAddr}</span>
+              <button class="btn-icon" onclick="enableEdit('prob', ${index})" title="Edit address"><i class="fa fa-pen"></i></button>
             </div>
-            <div class="btn-group">
-              <button class="btn btn-valid" onclick="markProblemAsValid(${index})">Mark Valid</button>
-              <button class="btn btn-invalid" onclick="markProblemAsInvalid(${index})">Mark Invalid</button>
+            <div id="edit_wrap_prob_${index}" style="display:none; align-items:center; gap:8px;">
+              <input type="text" class="input-edit" id="input_prob_${index}" value="${displayAddr}" />
+              <button class="btn-icon btn-save" onclick="saveEdit('prob', ${index})" title="Save address"><i class="fa fa-check"></i></button>
             </div>
-          </div>
-          <div style="font-size:0.85rem; color:#a0aec0; padding-left:30px;">
-            <strong>Newspapers:</strong> ${papers}
-          </div>
-        `;
-        container.appendChild(div);
+          </td>`;
+        tbody.appendChild(tr);
+
+        const actionTr = document.createElement('tr');
+        actionTr.innerHTML = `
+          <td colspan="2" style="text-align:right;">
+            <button class="btn btn-valid" onclick="markProblemAsValid(${index})">Mark Valid</button>
+            <button class="btn btn-invalid" onclick="markProblemAsInvalid(${index})">Mark Invalid</button>
+          </td>`;
+        tbody.appendChild(actionTr);
       });
     }
 
@@ -499,39 +526,48 @@
         return;
       }
 
-      list.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'address-item';
+      // Create table
+      const table = document.createElement('table');
+      table.className = 'address-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th></th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody id="validTableBody"></tbody>`;
+      container.appendChild(table);
+      const tbody = document.getElementById('validTableBody');
 
+      list.forEach((item, index) => {
         const itemKey = `valid_${index}`;
         const isChecked = selectedItems.has(itemKey) ? 'checked' : '';
-        const num = index + 1;
-        const papers = (item.newspapers || []).join(' ') || 'None';
         const displayAddr = item.full_address || item.raw_address;
 
-        div.innerHTML = `
-          <div class="address-row">
-            <div class="address-left">
-              <input type="checkbox" class="item-checkbox" ${isChecked} onchange="toggleItemSelect('${itemKey}', this.checked)">
-              <span class="address-num">${num}.</span>
-              <div id="text_wrap_valid_${index}" style="display:flex; align-items:center; gap:8px; flex:1;">
-                <span class="address-display" id="display_valid_${index}">${displayAddr}</span>
-                <button class="btn-icon" onclick="enableEdit('valid', ${index})" title="Edit address"><i class="fa fa-pen"></i></button>
-              </div>
-              <div id="edit_wrap_valid_${index}" style="display:none; align-items:center; gap:8px; flex:1;">
-                <input type="text" class="input-edit" id="input_valid_${index}" value="${displayAddr}" />
-                <button class="btn-icon btn-save" onclick="saveEdit('valid', ${index})" title="Save address"><i class="fa fa-check"></i></button>
-              </div>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="width:30px; text-align:center;">
+            <input type="checkbox" class="item-checkbox" ${isChecked} data-key="${itemKey}" onclick="handleCheck(event, this)">
+          </td>
+          <td>
+            <div id="text_wrap_valid_${index}" style="display:flex; align-items:center; gap:8px;">
+              <span class="address-display" id="display_valid_${index}">${displayAddr}</span>
+              <button class="btn-icon" onclick="enableEdit('valid', ${index})" title="Edit address"><i class="fa fa-pen"></i></button>
             </div>
-            <div class="btn-group">
-              <button class="btn btn-invalid" onclick="markValidAsInvalid(${index})">Mark Invalid</button>
+            <div id="edit_wrap_valid_${index}" style="display:none; align-items:center; gap:8px;">
+              <input type="text" class="input-edit" id="input_valid_${index}" value="${displayAddr}" />
+              <button class="btn-icon btn-save" onclick="saveEdit('valid', ${index})" title="Save address"><i class="fa fa-check"></i></button>
             </div>
-          </div>
-          <div style="font-size:0.85rem; color:#a0aec0; padding-left:30px;">
-            <strong>Newspapers:</strong> ${papers}
-          </div>
-        `;
-        container.appendChild(div);
+          </td>`;
+        tbody.appendChild(tr);
+
+        const actionTr = document.createElement('tr');
+        actionTr.innerHTML = `
+          <td colspan="2" style="text-align:right;">
+            <button class="btn btn-invalid" onclick="markValidAsInvalid(${index})">Mark Invalid</button>
+          </td>`;
+        tbody.appendChild(actionTr);
       });
     }
 
@@ -553,12 +589,38 @@
       renderAll();
     }
 
-    function toggleItemSelect(itemKey, isChecked) {
-      if (isChecked) {
-        selectedItems.add(itemKey);
+    let lastCheckedCheckbox = null;
+
+    function handleCheck(e, checkbox) {
+      const isChecked = checkbox.checked;
+      const currentKey = checkbox.getAttribute('data-key');
+
+      if (e.shiftKey && lastCheckedCheckbox) {
+        const checkboxes = Array.from(document.querySelectorAll('.item-checkbox'));
+        const start = checkboxes.indexOf(lastCheckedCheckbox);
+        const end = checkboxes.indexOf(checkbox);
+        
+        const min = Math.min(start, end);
+        const max = Math.max(start, end);
+        
+        for (let i = min; i <= max; i++) {
+          checkboxes[i].checked = isChecked;
+          const key = checkboxes[i].getAttribute('data-key');
+          if (isChecked) {
+            selectedItems.add(key);
+          } else {
+            selectedItems.delete(key);
+          }
+        }
       } else {
-        selectedItems.delete(itemKey);
+        if (isChecked) {
+          selectedItems.add(currentKey);
+        } else {
+          selectedItems.delete(currentKey);
+        }
       }
+      
+      lastCheckedCheckbox = checkbox;
       updateSelectedCount();
     }
 

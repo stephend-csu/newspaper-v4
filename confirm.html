@@ -5,322 +5,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Confirmation Screen</title>
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
-    <style>
-    /* Minimalist Japanese-inspired aesthetic */
+      <style>
+    /* Minimalist Japanese-inspired aesthetic - Dark Mode */
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap');
     
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f7f7f7;
-      color: #333333;
+      background-color: #121212;
+      color: #e0e0e0;
       padding: 24px 20px;
       min-height: 100vh;
       line-height: 1.5;
     }
-    .container {
-      max-width: 960px;
-      margin: 0 auto;
-    }
+    .container { max-width: 960px; margin: 0 auto; }
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      border-bottom: 1px solid #e2e2e2;
-      padding-bottom: 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; border-bottom: 1px solid #333333; padding-bottom: 16px;
     }
-    h1 {
-      font-size: 1.75rem;
-      color: #222222;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-    .nav-links a {
-      margin-left: 16px;
-      color: #666666;
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.95rem;
-      transition: color 0.2s;
-    }
-    .nav-links a:hover {
-      color: #111111;
-    }
+    h1 { font-size: 1.75rem; color: #ffffff; font-weight: 600; letter-spacing: -0.02em; }
+    .nav-links a { margin-left: 16px; color: #a0a0a0; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; }
+    .nav-links a:hover { color: #ffffff; }
     
     /* Summary Cards */
     .summary-card {
-      background: #ffffff;
-      border: 1px solid #eaeaea;
-      border-radius: 4px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      background: #1e1e1e; border: 1px solid #333333; border-radius: 4px;
+      padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     .summary-title {
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #777777;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-weight: 600; font-size: 0.85rem; color: #888888;
+      margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;
     }
-    .summary-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+    .summary-grid { display: flex; flex-wrap: wrap; gap: 10px; }
     .paper-badge {
-      background: #f4f4f4;
-      border-radius: 4px;
-      padding: 6px 10px;
-      font-weight: 500;
-      font-size: 0.85rem;
-      color: #444444;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      border: 1px solid #e0e0e0;
+      background: #2a2a2a; border-radius: 4px; padding: 6px 10px;
+      font-weight: 500; font-size: 0.85rem; color: #cccccc; display: flex;
+      align-items: center; gap: 6px; border: 1px solid #444444;
     }
-    .paper-badge .count {
-      background: #cccccc;
-      color: #ffffff;
-      border-radius: 12px;
-      padding: 2px 6px;
-      font-size: 0.75rem;
-    }
+    .paper-badge .count { background: #555555; color: #ffffff; border-radius: 12px; padding: 2px 6px; font-size: 0.75rem; }
 
-    /* Table style for address lists */
-    .address-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-    }
-    .address-table th,
-    .address-table td {
-      border: 1px solid #eaeaea;
-      padding: 8px 12px;
-      text-align: left;
-      font-size: 0.9rem;
-    }
-    .address-table th {
-      background: #fbfbfb;
-      color: #555555;
-      font-weight: 500;
-    }
-    .address-table tbody tr {
-      background: #ffffff;
-      transition: background 0.15s;
-    }
-    .address-table tbody tr:nth-child(even) {
-      background: #fafafa;
-    }
-    .address-table tbody tr:hover {
-      background: #f2f2f2;
-    }
-    .address-table .address-display {
-      font-weight: 500;
-      color: #222222;
-    }
-    .item-checkbox {
-      width: 14px;
-      height: 14px;
-      cursor: pointer;
-      accent-color: #555555;
-    }
+    /* Table style */
+    .address-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .address-table th, .address-table td { border: 1px solid #333333; padding: 8px 12px; text-align: left; font-size: 0.9rem; }
+    .address-table th { background: #1a1a1a; color: #aaaaaa; font-weight: 500; }
+    .address-table tbody tr { background: #1e1e1e; transition: background 0.15s; }
+    .address-table tbody tr:nth-child(even) { background: #181818; }
+    .address-table tbody tr:hover { background: #252525; }
+    .address-table .address-display { font-weight: 500; color: #eeeeee; }
+    .item-checkbox { width: 14px; height: 14px; cursor: pointer; accent-color: #888888; }
 
     /* Batch Edit Bar */
     .batch-bar {
-      background: #ffffff;
-      border: 1px solid #eaeaea;
-      border-radius: 4px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      background: #1e1e1e; border: 1px solid #333333; border-radius: 4px; padding: 12px 16px;
+      margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-    .batch-controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .batch-select {
-      background: #fdfdfd;
-      color: #333333;
-      border: 1px solid #cccccc;
-      border-radius: 3px;
-      padding: 6px 12px;
-      font-size: 0.9rem;
-      font-family: inherit;
-    }
+    .batch-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .batch-select { background: #2a2a2a; color: #eeeeee; border: 1px solid #555555; border-radius: 3px; padding: 6px 12px; font-size: 0.9rem; font-family: inherit; }
     
     /* Buttons */
-    .btn {
-      padding: 6px 12px;
-      border-radius: 3px;
-      border: 1px solid transparent;
-      font-weight: 500;
-      font-size: 0.85rem;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-    .btn-batch {
-      background: #555555;
-      color: #ffffff;
-    }
-    .btn-batch:hover {
-      background: #333333;
-    }
-    .btn-icon {
-      background: transparent;
-      color: #999999;
-      border: 1px solid #e0e0e0;
-      border-radius: 3px;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: all 0.2s;
-    }
-    .btn-icon:hover {
-      background: #f0f0f0;
-      color: #333333;
-    }
-    .btn-save {
-      background: #e8f5e9;
-      color: #2e7d32;
-      border-color: #c8e6c9;
-    }
-    .btn-save:hover {
-      background: #c8e6c9;
-    }
-    .btn-valid {
-      background: #ffffff;
-      color: #2e7d32;
-      border: 1px solid #c8e6c9;
-    }
-    .btn-valid:hover {
-      background: #f1f8e9;
-    }
-    .btn-invalid {
-      background: #ffffff;
-      color: #c62828;
-      border: 1px solid #ffcdd2;
-    }
-    .btn-invalid:hover {
-      background: #ffebee;
-    }
-    .btn-primary {
-      background: #333333;
-      color: #ffffff;
-      padding: 12px 24px;
-      font-size: 1rem;
-      border-radius: 4px;
-      width: 100%;
-      margin-top: 16px;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      border: none;
-    }
-    .btn-primary:hover {
-      background: #111111;
-    }
+    .btn { padding: 6px 12px; border-radius: 3px; border: 1px solid transparent; font-weight: 500; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .btn-batch { background: #444444; color: #ffffff; }
+    .btn-batch:hover { background: #666666; }
+    .btn-icon { background: transparent; color: #888888; border: 1px solid #444444; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+    .btn-icon:hover { background: #333333; color: #ffffff; }
+    .btn-save { background: #1b3320; color: #66bb6a; border-color: #2e5536; }
+    .btn-save:hover { background: #2e5536; }
+    .btn-valid { background: #1e1e1e; color: #66bb6a; border: 1px solid #2e5536; }
+    .btn-valid:hover { background: #1b3320; }
+    .btn-invalid { background: #1e1e1e; color: #e57373; border: 1px solid #5c2b2b; }
+    .btn-invalid:hover { background: #3b1c1c; }
+    .btn-primary { background: #eeeeee; color: #111111; padding: 12px 24px; font-size: 1rem; border-radius: 4px; width: 100%; margin-top: 16px; font-weight: 500; letter-spacing: 0.02em; border: none; }
+    .btn-primary:hover { background: #ffffff; }
 
     /* Sections */
     .section-card {
-      background: #ffffff;
-      border: 1px solid #eaeaea;
-      border-radius: 4px;
-      padding: 20px;
-      margin-bottom: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      background: #1e1e1e; border: 1px solid #333333; border-radius: 4px;
+      padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-    .section-header {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: #333333;
-    }
-    .problem-header {
-      color: #d32f2f;
-    }
-    .valid-header {
-      color: #388e3c;
-    }
+    .section-header { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; color: #eeeeee; }
+    .problem-header { color: #ef5350; }
+    .valid-header { color: #66bb6a; }
 
     .technical-blurb {
-      background: #f9f9f9;
-      border-left: 3px solid #cccccc;
-      padding: 12px 16px;
-      border-radius: 0 4px 4px 0;
-      font-size: 0.85rem;
-      color: #666666;
-      margin-bottom: 16px;
-      line-height: 1.5;
+      background: #181818; border-left: 3px solid #555555; padding: 12px 16px; border-radius: 0 4px 4px 0;
+      font-size: 0.85rem; color: #999999; margin-bottom: 16px; line-height: 1.5;
     }
     
     .input-edit {
-      background: #ffffff;
-      color: #333333;
-      padding: 6px 10px;
-      border: 1px solid #cccccc;
-      border-radius: 3px;
-      font-size: 0.9rem;
-      flex: 1;
-      font-family: inherit;
+      background: #2a2a2a; color: #eeeeee; padding: 6px 10px; border: 1px solid #555555;
+      border-radius: 3px; font-size: 0.9rem; flex: 1; font-family: inherit;
     }
-    .input-edit:focus {
-      outline: none;
-      border-color: #999999;
-    }
+    .input-edit:focus { outline: none; border-color: #888888; }
 
     /* Modal */
     .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.9);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      display: none;
-      backdrop-filter: blur(2px);
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8);
+      display: flex; justify-content: center; align-items: center; z-index: 1000; display: none; backdrop-filter: blur(2px);
     }
     .modal-box {
-      background: #ffffff;
-      border: 1px solid #eaeaea;
-      border-radius: 6px;
-      padding: 32px;
-      max-width: 450px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      background: #1e1e1e; border: 1px solid #333333; border-radius: 6px; padding: 32px;
+      max-width: 450px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .spinner {
-      border: 3px solid #f0f0f0;
-      border-top: 3px solid #555555;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
+      border: 3px solid #333333; border-top: 3px solid #888888; border-radius: 50%;
+      width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 20px auto;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>

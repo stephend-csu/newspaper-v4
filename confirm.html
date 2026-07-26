@@ -86,6 +86,7 @@
     .section-header { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; color: #eeeeee; }
     .problem-header { color: #ef5350; }
     .valid-header { color: #66bb6a; }
+    .invalid-header { color: #888888; }
 
     .technical-blurb {
       background: #181818; border-left: 3px solid #555555; padding: 12px 16px; border-radius: 0 4px 4px 0;
@@ -174,6 +175,18 @@
       </div>
     </div>
 
+    
+    <!-- Invalid Addresses Section -->
+    <div class="section-card">
+      <div class="section-header invalid-header">
+        <span>Invalid Addresses (<span id="invalidCount">0</span>)</span>
+      </div>
+
+      <div class="address-list" id="invalidList">
+        <div style="color:#a0aec0; padding: 10px;">No invalid addresses loaded.</div>
+      </div>
+    </div>
+
     <!-- Valid Addresses Section -->
     <div class="section-card">
       <div class="section-header valid-header">
@@ -203,7 +216,8 @@
     let routeData = {
       newspaper_counts: {},
       valid_addresses: [],
-      problem_addresses: []
+      problem_addresses: [],
+      invalid_addresses: []
     };
 
     let selectedItems = new Set();
@@ -213,6 +227,7 @@
       if (stored) {
         try {
           routeData = JSON.parse(stored);
+          if (!routeData.invalid_addresses) routeData.invalid_addresses = [];
         } catch(e) {
           console.error(e);
         }
@@ -224,6 +239,7 @@
       renderNewspapers();
       renderProblemAddresses();
       renderValidAddresses();
+      renderInvalidAddresses();
       updateSelectedCount();
     }
 
@@ -264,8 +280,9 @@
       table.innerHTML = `
         <thead>
           <tr>
-            <th></th>
+            <th style="width:30px;"></th>
             <th>Address</th>
+            <th style="width:160px; text-align:right;">Actions</th>
           </tr>
         </thead>
         <tbody id="problemTableBody"></tbody>`;
@@ -291,16 +308,12 @@
               <input type="text" class="input-edit" id="input_prob_${index}" value="${displayAddr}" />
               <button class="btn-icon btn-save" onclick="saveEdit('prob', ${index})" title="Save address"><i class="fa fa-check"></i></button>
             </div>
+          </td>
+          <td style="text-align:right; white-space:nowrap;">
+            <button class="btn btn-valid" onclick="markProblemAsValid(${index})">Valid</button>
+            <button class="btn btn-invalid" onclick="markProblemAsInvalid(${index})">Invalid</button>
           </td>`;
         tbody.appendChild(tr);
-
-        const actionTr = document.createElement('tr');
-        actionTr.innerHTML = `
-          <td colspan="2" style="text-align:right;">
-            <button class="btn btn-valid" onclick="markProblemAsValid(${index})">Mark Valid</button>
-            <button class="btn btn-invalid" onclick="markProblemAsInvalid(${index})">Mark Invalid</button>
-          </td>`;
-        tbody.appendChild(actionTr);
       });
     }
 
@@ -323,8 +336,9 @@
       table.innerHTML = `
         <thead>
           <tr>
-            <th></th>
+            <th style="width:30px;"></th>
             <th>Address</th>
+            <th style="width:160px; text-align:right;">Actions</th>
           </tr>
         </thead>
         <tbody id="validTableBody"></tbody>`;
@@ -350,15 +364,67 @@
               <input type="text" class="input-edit" id="input_valid_${index}" value="${displayAddr}" />
               <button class="btn-icon btn-save" onclick="saveEdit('valid', ${index})" title="Save address"><i class="fa fa-check"></i></button>
             </div>
+          </td>
+          <td style="text-align:right; white-space:nowrap;">
+            <button class="btn btn-invalid" onclick="markValidAsInvalid(${index})">Invalid</button>
           </td>`;
         tbody.appendChild(tr);
+      });
+    }
 
-        const actionTr = document.createElement('tr');
-        actionTr.innerHTML = `
-          <td colspan="2" style="text-align:right;">
-            <button class="btn btn-invalid" onclick="markValidAsInvalid(${index})">Mark Invalid</button>
+    
+    function renderInvalidAddresses() {
+      const container = document.getElementById('invalidList');
+      const countSpan = document.getElementById('invalidCount');
+      container.innerHTML = '';
+
+      const list = routeData.invalid_addresses || [];
+      countSpan.textContent = list.length;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="color:#a0aec0; padding:8px;">No invalid addresses present.</div>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.className = 'address-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th style="width:30px;"></th>
+            <th>Address</th>
+            <th style="width:160px; text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="invalidTableBody"></tbody>`;
+      container.appendChild(table);
+      const tbody = document.getElementById('invalidTableBody');
+
+      list.forEach((item, index) => {
+        const itemKey = `inv_${index}`;
+        const isChecked = selectedItems.has(itemKey) ? 'checked' : '';
+        const displayAddr = item.full_address || item.raw_address;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="width:30px; text-align:center;">
+            <input type="checkbox" class="item-checkbox" ${isChecked} data-key="${itemKey}" onclick="handleCheck(event, this)">
+          </td>
+          <td style="opacity: 0.6;">
+            <div id="text_wrap_inv_${index}" style="display:flex; align-items:center; gap:8px;">
+              <span class="address-display" id="display_inv_${index}" style="text-decoration:line-through;">${displayAddr}</span>
+              <button class="btn-icon" onclick="enableEdit('inv', ${index})" title="Edit address"><i class="fa fa-pen"></i></button>
+            </div>
+            <div id="edit_wrap_inv_${index}" style="display:none; align-items:center; gap:8px;">
+              <input type="text" class="input-edit" id="input_inv_${index}" value="${displayAddr}" />
+              <button class="btn-icon btn-save" onclick="saveEdit('inv', ${index})" title="Save address"><i class="fa fa-check"></i></button>
+            </div>
+          </td>
+          <td style="text-align:right; white-space:nowrap;">
+            <button class="btn btn-valid" onclick="markInvalidAsValid(${index})">Valid</button>
+            <button class="btn btn-batch" onclick="markInvalidAsProblem(${index})">Problem</button>
           </td>`;
-        tbody.appendChild(actionTr);
+        tbody.appendChild(tr);
       });
     }
 
@@ -370,7 +436,7 @@
 
     function saveEdit(section, index) {
       const val = document.getElementById(`input_${section}_${index}`).value.trim();
-      let item = section === 'prob' ? routeData.problem_addresses[index] : routeData.valid_addresses[index];
+      let item = section === 'prob' ? routeData.problem_addresses[index] : (section === 'valid' ? routeData.valid_addresses[index] : routeData.invalid_addresses[index]);
       if (item) {
         item.full_address = val;
         item.lat = null;
@@ -422,6 +488,7 @@
       if (isChecked) {
         (routeData.problem_addresses || []).forEach((_, idx) => selectedItems.add(`prob_${idx}`));
         (routeData.valid_addresses || []).forEach((_, idx) => selectedItems.add(`valid_${idx}`));
+        (routeData.invalid_addresses || []).forEach((_, idx) => selectedItems.add(`inv_${idx}`));
       }
       renderAll();
     }
@@ -442,7 +509,7 @@
         const section = parts[0];
         const index = parseInt(parts[1]);
 
-        let targetList = section === 'prob' ? routeData.problem_addresses : routeData.valid_addresses;
+        let targetList = section === 'prob' ? routeData.problem_addresses : (section === 'valid' ? routeData.valid_addresses : routeData.invalid_addresses);
         if (targetList && targetList[index]) {
           let currentAddr = targetList[index].full_address || targetList[index].raw_address;
           let streetPart = currentAddr.split(',')[0].trim();
@@ -466,7 +533,8 @@
     }
 
     function markProblemAsInvalid(index) {
-      routeData.problem_addresses.splice(index, 1);
+      const item = routeData.problem_addresses.splice(index, 1)[0];
+      routeData.invalid_addresses.unshift(item);
       selectedItems.clear();
       saveState();
       renderAll();
@@ -474,6 +542,22 @@
 
     function markValidAsInvalid(index) {
       const item = routeData.valid_addresses.splice(index, 1)[0];
+      routeData.invalid_addresses.unshift(item);
+      selectedItems.clear();
+      saveState();
+      renderAll();
+    }
+
+    function markInvalidAsValid(index) {
+      const item = routeData.invalid_addresses.splice(index, 1)[0];
+      routeData.valid_addresses.unshift(item);
+      selectedItems.clear();
+      saveState();
+      renderAll();
+    }
+
+    function markInvalidAsProblem(index) {
+      const item = routeData.invalid_addresses.splice(index, 1)[0];
       routeData.problem_addresses.unshift(item);
       selectedItems.clear();
       saveState();

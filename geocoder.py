@@ -53,7 +53,8 @@ def geocode_address_candidate(address_str):
                         'lon': float(loc['x']),
                         'display_name': display,
                         'city': city_found,
-                        'county': 'Contra Costa County'
+                        'county': 'Contra Costa County',
+                        'score': c.get('score', 100)
                     }
         except Exception as e:
             if attempt == 1:
@@ -79,7 +80,8 @@ def geocode_address_candidate(address_str):
                     'lon': float(item['lon']),
                     'display_name': item.get('display_name', address_clean),
                     'city': city,
-                    'county': addr.get('county', 'Contra Costa County')
+                    'county': addr.get('county', 'Contra Costa County'),
+                    'score': 100
                 }
     except Exception as e:
         print(f"Nominatim fallback error for '{address_clean}': {e}")
@@ -121,6 +123,14 @@ def validate_and_classify_addresses(address_items):
         geo = geocode_address_candidate(lookup_str)
 
         if geo and geo.get('lat') and geo.get('lon'):
+            if geo.get('score', 100) < 100:
+                return None, {
+                    'raw_address': raw_addr,
+                    'full_address': f"{raw_addr}, CA",
+                    'newspapers': papers,
+                    'reason': f"Fuzzy match detected (Score: {geo.get('score')}). Geocoder snapped to: {geo.get('display_name')}"
+                }
+                
             city_name = geo.get('city')
             
             if found_city:

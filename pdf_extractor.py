@@ -1,5 +1,5 @@
 import re
-import pdfplumber
+import fitz  # PyMuPDF
 
 # Comprehensive list of Newspaper codes
 KNOWN_NEWSPAPERS = ['EBT', 'WSJ', 'CAP', 'NYT', 'SFC', 'UST', 'WLD', 'STD', 'LAT', 'FT', 'IBD', 'BAR']
@@ -73,14 +73,13 @@ def parse_pdf_text(text: str):
 
 def extract_addresses_from_pdf_stream(stream):
     """
-    Extracts addresses and newspapers from a PDF file-like stream using pdfplumber.
+    Extracts addresses and newspapers from a PDF file-like stream using PyMuPDF (fitz).
     """
     full_text = ""
-    with pdfplumber.open(stream) as pdf:
-        for page in pdf.pages:
-            txt = page.extract_text()
-            if txt:
-                full_text += txt + "\n"
+    stream_bytes = stream.read()
+    with fitz.open(stream=stream_bytes, filetype="pdf") as doc:
+        for page in doc:
+            full_text += page.get_text() + "\n"
             
     parsed = parse_pdf_text(full_text)
     

@@ -167,23 +167,24 @@
     .address-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      border: 1px solid #2d3748;
+      border-radius: 4px;
+      overflow: hidden;
     }
     .address-item {
       background: #17191d;
-      border: 1px solid #2d3748;
-      border-radius: 4px;
-      padding: 8px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .address-row {
+      padding: 6px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      border-bottom: 1px solid #2d3748;
       gap: 12px;
-      flex-wrap: wrap;
+    }
+    .address-item:last-child {
+      border-bottom: none;
+    }
+    .address-item:nth-child(even) {
+      background: #1c1f24;
     }
     .address-left {
       display: flex;
@@ -461,7 +462,6 @@
         const displayAddr = item.full_address || item.raw_address;
 
         div.innerHTML = `
-          <div class="address-row">
             <div class="address-left">
               <input type="checkbox" class="item-checkbox" ${isChecked} data-key="${itemKey}" onclick="handleCheck(event, this)">
               <span class="address-num">${num}.</span>
@@ -478,10 +478,6 @@
               <button class="btn btn-valid" onclick="markProblemAsValid(${index})">Mark Valid</button>
               <button class="btn btn-invalid" onclick="markProblemAsInvalid(${index})">Mark Invalid</button>
             </div>
-          </div>
-          <div style="font-size:0.8rem; color:#a0aec0; padding-left:26px;">
-            <strong>Newspapers:</strong> ${papers}
-          </div>
         `;
         container.appendChild(div);
       });
@@ -511,7 +507,6 @@
         const displayAddr = item.full_address || item.raw_address;
 
         div.innerHTML = `
-          <div class="address-row">
             <div class="address-left">
               <input type="checkbox" class="item-checkbox" ${isChecked} data-key="${itemKey}" onclick="handleCheck(event, this)">
               <span class="address-num">${num}.</span>
@@ -527,10 +522,6 @@
             <div class="btn-group">
               <button class="btn btn-invalid" onclick="markValidAsInvalid(${index})">Mark Invalid</button>
             </div>
-          </div>
-          <div style="font-size:0.8rem; color:#a0aec0; padding-left:26px;">
-            <strong>Newspapers:</strong> ${papers}
-          </div>
         `;
         container.appendChild(div);
       });

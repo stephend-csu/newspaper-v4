@@ -62,12 +62,15 @@ def parse_pdf_text(text: str):
                     # Token is part of street name if no newspapers detected yet and it's alphabetic
                     if not token.isdigit() and not re.match(r'^\d+[A-Z]?$', token_upper):
                         # Avoid treating route codes like 7D or 1 as street names
-                        if len(token) > 1 and not re.match(r'^\d+[A-Z]$', token_upper):
+                        if not re.match(r'^\d+[A-Z]$', token_upper):
                             addr_words.append(token)
                             
             if addr_words:
                 street_part = " ".join(addr_words)
-                full_addr = f"{num} {street_part}".strip().title()
+                if any(street_part.upper().endswith(s) for s in STREET_SUFFIXES):
+                    full_addr = f"{num} {street_part}".strip().title()
+                else:
+                    full_addr = f"{num} {street_part} {current_street}".strip().title()
             elif current_street:
                 full_addr = f"{num} {current_street}".strip().title()
             else:
@@ -86,9 +89,28 @@ def extract_addresses_from_pdf_stream(stream):
     reader = pypdf.PdfReader(stream)
     full_text = ""
     for page in reader.pages:
-        txt = page.extract_text()
+        try:
+            txt = page.extract_text(extraction_mode="layout")
+            is_layout = True
+        except TypeError:
+            txt = page.extract_text()
+            is_layout = False
+            
         if txt:
-            full_text += txt + "\n"
+            if is_layout:
+                col1, col2, col3 = [], [], []
+                for line in txt.split('\n'):
+                    c1 = line[0:30].strip() if len(line) > 0 else ""
+                    c2 = line[30:61].strip() if len(line) > 30 else ""
+                    c3 = line[61:].strip() if len(line) > 61 else ""
+                    if c1: col1.append(c1)
+                    if c2: col2.append(c2)
+                    if c3: col3.append(c3)
+                full_text += "\n".join(col1) + "\n"
+                full_text += "\n".join(col2) + "\n"
+                full_text += "\n".join(col3) + "\n"
+            else:
+                full_text += txt + "\n"
             
     parsed = parse_pdf_text(full_text)
     

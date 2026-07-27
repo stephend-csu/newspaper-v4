@@ -18,6 +18,11 @@ STREET_SUFFIXES = (
     'AVENIDA', 'CALLE', 'CAMINO', 'CORTE', 'PASEO', 'VIA', 'VEREDA', 'VALLE'
 )
 
+STREET_PREFIXES = (
+    'AVENIDA', 'CALLE', 'CAMINO', 'CORTE', 'PASEO', 'VIA', 'VEREDA', 'VALLE',
+    'EL', 'LA', 'LOS', 'LAS', 'SAN', 'SANTA', 'DEL'
+)
+
 def parse_pdf_text(text: str):
     """
     Parses text extracted from a delivery route PDF.
@@ -40,10 +45,13 @@ def parse_pdf_text(text: str):
         if not tokens:
             continue
             
-        # 1. Test if line is a street header (e.g., "ARBOLADO DR", "PERRA WAY", "PEAK CT")
-        if not re.match(r'^\d+', line) and any(tokens[-1] == suff or (len(tokens) > 1 and tokens[-1] in STREET_SUFFIXES) for suff in STREET_SUFFIXES):
-            current_street = line.strip()
-            continue
+        # 1. Test if line is a street header (e.g., "ARBOLADO DR", "PERRA WAY", "CORTE DIABLO")
+        if not re.match(r'^\d+', line):
+            has_suffix = tokens[-1] in STREET_SUFFIXES
+            has_prefix = tokens[0] in STREET_PREFIXES
+            if has_suffix or has_prefix:
+                current_street = line.strip()
+                continue
             
         # 2. Check if line starts with a house number e.g. "91 EBT 7D 1" or "3104 Perra Way EBT WSJ"
         match = re.match(r'^(\d+[\w\-]*)\s+(.+)$', line, re.IGNORECASE)

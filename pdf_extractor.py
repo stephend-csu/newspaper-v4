@@ -2,7 +2,7 @@ import re
 import pypdf
 
 # Comprehensive list of Newspaper codes
-KNOWN_NEWSPAPERS = ['EBT', 'WSJ', 'CAP', 'NYT', 'SFC', 'UST', 'WLD', 'STD', 'LAT', 'FT', 'IBD', 'BAR']
+KNOWN_NEWSPAPERS = ['EBT', 'WSJ', 'CAP', 'NYT', 'SFC', 'UST', 'WLD', 'STD', 'LAT', 'FT', 'IBD', 'BAR', 'TVB']
 
 STREET_SUFFIXES = (
     # Standard English suffixes & abbreviations

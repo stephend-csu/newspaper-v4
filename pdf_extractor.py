@@ -132,11 +132,15 @@ def extract_addresses_from_pdf_stream(streams):
                 
             if txt:
                 if is_layout:
+                    lines = txt.split('\n')
+                    max_width = max((len(line) for line in lines), default=0)
+                    col_width = (max_width // 3) + 1 if max_width > 0 else 30
+                    
                     col1, col2, col3 = [], [], []
-                    for line in txt.split('\n'):
-                        c1 = line[0:30].strip() if len(line) > 0 else ""
-                        c2 = line[30:61].strip() if len(line) > 30 else ""
-                        c3 = line[61:].strip() if len(line) > 61 else ""
+                    for line in lines:
+                        c1 = line[0:col_width].strip() if len(line) > 0 else ""
+                        c2 = line[col_width:col_width*2].strip() if len(line) > col_width else ""
+                        c3 = line[col_width*2:].strip() if len(line) > col_width*2 else ""
                         if c1: col1.append(c1)
                         if c2: col2.append(c2)
                         if c3: col3.append(c3)

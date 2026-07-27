@@ -15,10 +15,11 @@ $(window).on('load', function() {
   };
 
   var timestamp = Date.now();
+  var githubBaseUrl = 'https://raw.githubusercontent.com/stephend-csu/newspaper-v4/main/csv/';
 
-  $.get('csv/Options.csv?time=' + timestamp, function(options) {
-    $.get('csv/Chapters.csv?time=' + timestamp, function(chapters) {
-      $.getJSON('csv/metadata.json?time=' + timestamp, function(metadata) {
+  $.get(githubBaseUrl + 'Options.csv?time=' + timestamp, function(options) {
+    $.get(githubBaseUrl + 'Chapters.csv?time=' + timestamp, function(chapters) {
+      $.getJSON(githubBaseUrl + 'metadata.json?time=' + timestamp, function(metadata) {
         initMap(
           $.csv.toObjects(options),
           $.csv.toObjects(chapters),
@@ -122,7 +123,31 @@ $(window).on('load', function() {
     $('#header').append('<h2>' + (getSetting('_mapSubtitle') || '') + '</h2>');
 
     if (metadata && metadata.upload_timestamp_pst) {
-      $('#header').append('<div class="upload-pst-header"><i class="fa fa-clock"></i> Uploaded to GitHub: ' + metadata.upload_timestamp_pst + '</div>');
+      var pubTimeStr = metadata.upload_timestamp_pst;
+      var waitTimeStr = pubTimeStr;
+      var match = pubTimeStr.match(/(.*) (\d{1,2}):(\d{2}) (AM|PM) (PST|PDT)/);
+      if (match) {
+          var hours = parseInt(match[2], 10);
+          var mins = parseInt(match[3], 10);
+          var ampm = match[4];
+          var tz = match[5];
+          
+          mins += 5;
+          if (mins >= 60) {
+              mins -= 60;
+              hours += 1;
+              if (hours == 12) {
+                  ampm = (ampm === 'AM') ? 'PM' : 'AM';
+              } else if (hours > 12) {
+                  hours -= 12;
+              }
+          }
+          var minStr = mins < 10 ? '0' + mins : mins;
+          var hrStr = hours < 10 ? '0' + hours : hours;
+          waitTimeStr = hrStr + ':' + minStr + ' ' + ampm + ' ' + tz;
+      }
+      var msg = 'Published at ' + pubTimeStr + '. Please wait until ' + waitTimeStr + ' for GitHub to update the map data.';
+      $('#header').append('<div class="upload-pst-header" style="font-size:0.85em; color:#d9534f; line-height:1.3; padding: 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
     } else {
       $('#header').append('<div class="upload-pst-header"><i class="fa fa-clock"></i> Uploaded: Recent (PST)</div>');
     }
@@ -464,7 +489,7 @@ $(window).on('load', function() {
 
   function changeAttribution() {
     var attributionHTML = $('.leaflet-control-attribution')[0].innerHTML;
-    var credit = 'View <a href="./csv/Chapters.csv" target="_blank">data</a>';
+    var credit = 'View <a href="https://raw.githubusercontent.com/stephend-csu/newspaper-v4/main/csv/Chapters.csv" target="_blank">data</a>';
     var name = getSetting('_authorName');
     var url = getSetting('_authorURL');
 

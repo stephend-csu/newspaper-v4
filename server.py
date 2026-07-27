@@ -3,7 +3,7 @@ import uuid
 import threading
 from flask import Flask, request, jsonify, send_from_directory, render_template
 
-from pdf_extractor import extract_addresses_from_pdf_stream
+from pdf_extractor import extract_addresses_from_pdf_stream, parse_pdf_text, format_parsed_addresses
 from geocoder import validate_and_classify_addresses, suggest_addresses
 from router import optimize_road_route, generate_chapters_csv
 from github_sync import sync_chapters_and_metadata_to_github
@@ -62,12 +62,13 @@ def api_upload_pdf():
     if 'pdf_file' not in request.files:
         return jsonify({'error': 'No PDF file uploaded'}), 400
         
-    file = request.files['pdf_file']
-    if not file.filename:
+    files = request.files.getlist('pdf_file')
+    if not files or all(not f.filename for f in files):
         return jsonify({'error': 'Empty filename'}), 400
         
     try:
-        extracted_items = extract_addresses_from_pdf_stream(file.stream)
+        streams = [f.stream for f in files if f.filename]
+        extracted_items = extract_addresses_from_pdf_stream(streams)
         job_id = str(uuid.uuid4())
         JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'PDF extracted. Starting geocoding...'}
         
@@ -79,6 +80,55 @@ def api_upload_pdf():
     except Exception as e:
         print(f"Error processing PDF: {e}")
         return jsonify({'error': f"Failed to process PDF: {str(e)}"}), 500
+
+@app.route('/api/upload-manual-addresses', methods=['POST'])
+def api_upload_manual_addresses():
+    data = request.get_json() or {}
+    addresses_text = data.get('addresses', '')
+    if not addresses_text.strip():
+        return jsonify({'error': 'No addresses provided'}), 400
+        
+    try:
+        parsed = {}
+        for line in addresses_text.splitlines():
+            line = line.strip()
+            if line:
+                parsed[line] = set()
+                
+        extracted_items = format_parsed_addresses(parsed)
+        job_id = str(uuid.uuid4())
+        JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Addresses parsed. Starting geocoding...'}
+        
+        thread = threading.Thread(target=run_upload_geocoding_job, args=(job_id, extracted_items))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'success': True, 'job_id': job_id})
+    except Exception as e:
+        print(f"Error processing manual addresses: {e}")
+        return jsonify({'error': f"Failed to process addresses: {str(e)}"}), 500
+
+@app.route('/api/upload-raw-text', methods=['POST'])
+def api_upload_raw_text():
+    data = request.get_json() or {}
+    raw_text = data.get('text', '')
+    if not raw_text.strip():
+        return jsonify({'error': 'No text provided'}), 400
+        
+    try:
+        parsed = parse_pdf_text(raw_text)
+        extracted_items = format_parsed_addresses(parsed)
+        job_id = str(uuid.uuid4())
+        JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Raw text extracted. Starting geocoding...'}
+        
+        thread = threading.Thread(target=run_upload_geocoding_job, args=(job_id, extracted_items))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'success': True, 'job_id': job_id})
+    except Exception as e:
+        print(f"Error processing raw text: {e}")
+        return jsonify({'error': f"Failed to process raw text: {str(e)}"}), 500
 
 @app.route('/api/geocode-suggest', methods=['GET'])
 def api_geocode_suggest():

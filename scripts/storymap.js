@@ -270,7 +270,7 @@ $(window).on('load', function() {
       var streetNameClean = cleanStreetAddress(c['Chapter']);
       var mapsUrl = c['Maps Link'] || (c['Chapter'] ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c['Chapter'])}` : '#');
 
-      var headerHtml = `<p class="chapter-header"><span class="addr-num">${addressNum}.</span><a href="${mapsUrl}" target="_blank" class="street-addr-link">${streetNameClean}</a></p>`;
+      var headerHtml = `<p class="chapter-header"><span class="addr-num">${addressNum}.</span><a href="${mapsUrl}" class="street-addr-link">${streetNameClean}</a></p>`;
       
       var papersStr = c['Newspapers'] || '';
       var paperBadgesHtml = '';

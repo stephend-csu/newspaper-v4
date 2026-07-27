@@ -331,10 +331,7 @@ $(window).on('load', function() {
     // Ensure hyperlink click always opens Google Maps
     $(document).off('click', '.street-addr-link').on('click', '.street-addr-link', function(e) {
       e.stopPropagation();
-      var href = $(this).attr('href');
-      if (href && href !== '#') {
-        window.open(href, '_blank');
-      }
+      // Let the native <a> tag click handle the navigation in the current tab
     });
 
     window.handleNextAddressClick = function(btnElem, targetIdx) {

@@ -23,6 +23,10 @@ STREET_PREFIXES = (
     'EL', 'LA', 'LOS', 'LAS', 'SAN', 'SANTA', 'DEL'
 )
 
+NAKED_STREET_NAMES = (
+    'BROADWAY', 'ALAMEDA', 'EMBARCADERO', 'ESCOBAR', 'MARINA', 'VILLA', 'FRONT', 'MAIN'
+)
+
 def parse_pdf_text(text: str):
     """
     Parses text extracted from a delivery route PDF.
@@ -47,7 +51,7 @@ def parse_pdf_text(text: str):
             
         # 1. Test if line is a street header (e.g., "ARBOLADO DR", "PERRA WAY", "CORTE DIABLO")
         if not re.match(r'^\d+', line):
-            has_suffix = tokens[-1] in STREET_SUFFIXES
+            has_suffix = tokens[-1] in STREET_SUFFIXES or tokens[-1] in NAKED_STREET_NAMES
             has_prefix = tokens[0] in STREET_PREFIXES
             if has_suffix or has_prefix:
                 current_street = line.strip()

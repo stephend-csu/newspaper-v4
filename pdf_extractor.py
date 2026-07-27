@@ -5,9 +5,17 @@ import pypdf
 KNOWN_NEWSPAPERS = ['EBT', 'WSJ', 'CAP', 'NYT', 'SFC', 'UST', 'WLD', 'STD', 'LAT', 'FT', 'IBD', 'BAR']
 
 STREET_SUFFIXES = (
-    'WAY', 'RD', 'ROAD', 'DR', 'DRIVE', 'CT', 'COURT', 'LN', 'LANE',
-    'AVE', 'AVENUE', 'BLVD', 'BOULEVARD', 'CIR', 'CIRCLE', 'PL', 'PLACE',
-    'CORTE', 'CAMINO', 'WAY', 'ST', 'STREET', 'HWY', 'PATH', 'TERRACE', 'TER', 'PKWY', 'PARKWAY'
+    # Standard English suffixes & abbreviations
+    'ALY', 'ALLEY', 'AVE', 'AVENUE', 'BLVD', 'BOULEVARD', 'CIR', 'CIRCLE', 'CRCL',
+    'CT', 'COURT', 'CV', 'COVE', 'DR', 'DRIVE', 'EXPY', 'EXPWY', 'EXPRESSWAY', 
+    'GLN', 'GLEN', 'HL', 'HILL', 'HWY', 'HIGHWAY', 'KNL', 'KNOLL', 'KNLS', 'KNOLLS',
+    'LN', 'LANE', 'LOOP', 'PASS', 'PATH', 'PKWY', 'PARKWAY', 'PL', 'PLACE', 
+    'PLZ', 'PLAZA', 'PT', 'POINT', 'RD', 'ROAD', 'RDG', 'RIDGE', 'RUN', 'SQ', 'SQUARE',
+    'ST', 'STREET', 'TER', 'TERRACE', 'TRL', 'TRAIL', 'TRK', 'TRACK', 'VW', 'VIEW',
+    'VIS', 'VISTA', 'VLY', 'VALLEY', 'WALK', 'WAY', 'WY', 'XING', 'CROSSING',
+    
+    # Spanish/Regional terms very common in California (especially Contra Costa)
+    'AVENIDA', 'CALLE', 'CAMINO', 'CORTE', 'PASEO', 'VIA', 'VEREDA', 'VALLE'
 )
 
 def parse_pdf_text(text: str):

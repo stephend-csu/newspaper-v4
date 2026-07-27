@@ -303,7 +303,12 @@ def optimize_road_route(confirmed_addresses):
                 data = resp.json()
                 if data.get('routes'):
                     legs = data['routes'][0].get('legs', [])
-                    for leg in legs:
+                    for leg_idx, leg in enumerate(legs):
+                        # Extract and set actual driving distance (OSRM distance is in meters)
+                        distance_meters = leg.get('distance', 0)
+                        if i + leg_idx < len(route_waypoints):
+                            route_waypoints[i + leg_idx]['miles_to_next'] = distance_meters * 0.000621371
+                        
                         leg_coords = []
                         for step in leg.get('steps', []):
                             geom = step.get('geometry', {})

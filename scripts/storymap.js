@@ -337,8 +337,12 @@ $(window).on('load', function() {
     $('div#contents').scroll(function() {
       var currentPosition = $(this).scrollTop();
 
-      if (currentPosition < 200) {
-        $('#title').css('opacity', 1 - Math.min(1, currentPosition / 100));
+      var titleOpacity = 1 - Math.min(1, currentPosition / 100);
+      $('#title').css('opacity', titleOpacity);
+      if (titleOpacity <= 0) {
+        $('#title').css('visibility', 'hidden');
+      } else {
+        $('#title').css('visibility', 'visible');
       }
 
       for (var i = 0; i < pixelsAbove.length - 1; i++) {

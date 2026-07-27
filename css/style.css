@@ -55,6 +55,11 @@ body {
   visibility: hidden;
   font-weight: bold;
   text-align: center;
+  pointer-events: none;
+}
+
+#title * {
+  pointer-events: auto;
 }
 
 .chapter-container {

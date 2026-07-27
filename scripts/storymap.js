@@ -286,7 +286,7 @@ $(window).on('load', function() {
       var milesVal = c['Miles to Next'] || c['Description'] || '';
       var milesHtml = '';
       if (milesVal && !isNaN(parseFloat(milesVal))) {
-        milesHtml = `<div class="miles-to-next"><i class="fa fa-car"></i> ${parseFloat(milesVal).toFixed(1)} miles to next stop</div>`;
+        milesHtml = `<div class="miles-to-next"><i class="fa fa-car"></i> ${parseFloat(milesVal).toFixed(2)} miles to next stop</div>`;
       } else if (c['Description'] && c['Description'].toLowerCase().includes('start')) {
         milesHtml = `<div class="miles-to-next"><i class="fa fa-flag-checkered"></i> Start Location</div>`;
       }

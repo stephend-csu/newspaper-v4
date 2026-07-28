@@ -8,4 +8,4 @@ This project has been updated to support multiple concurrent users! The applicat
 
 These dynamically generated files are pushed to the GitHub repository automatically using the GitHub API, and the frontend dynamically reads the correct map based on the `?id=` parameter in the URL. To keep the repository clean, the sync script automatically purges any generated files older than 48 hours.
 
-*See the Git commit history for the architectural changes that transitioned this project from a single-file system to a multi-user dynamic system.*
+*See Git commit `929e752` (July 28, 2026) for the core architectural changes that transitioned this project from a single-file system to a multi-user dynamic system, and commit `3093c9b` for the addition of the QR share flow.*

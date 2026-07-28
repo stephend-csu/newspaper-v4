@@ -29,6 +29,11 @@ def confirm_page():
 def map_page():
     return send_from_directory('.', 'index.html')
 
+@app.route('/share')
+@app.route('/share.html')
+def share_page():
+    return send_from_directory('.', 'share.html')
+
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory('.', filename)

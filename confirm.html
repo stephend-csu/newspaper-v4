@@ -623,9 +623,9 @@
               statusText.textContent = 'Route completed and uploaded to GitHub! Redirecting to main map...';
               setTimeout(() => {
                 if (data.run_id && data.run_id !== 'default') {
-                  window.location.href = `/map?id=${data.run_id}`;
+                  window.location.href = `/share?id=${data.run_id}`;
                 } else {
-                  window.location.href = '/map';
+                  window.location.href = '/share';
                 }
               }, 1200);
             } else if (data.status === 'error') {

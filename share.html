@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Ready - Scan to Open</title>
+  
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 600px;
+      width: 90%;
+      background: #1e1e1e;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    h1 {
+      color: #ffffff;
+      margin-top: 0;
+      font-size: 1.8rem;
+    }
+    .subtitle {
+      color: #aaaaaa;
+      margin-bottom: 30px;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    #qrcode {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 30px;
+    }
+    .url-display {
+      background: #2a2a2a;
+      padding: 12px 16px;
+      border-radius: 4px;
+      word-break: break-all;
+      margin-bottom: 20px;
+      font-family: monospace;
+      color: #4CAF50;
+      border: 1px solid #444;
+    }
+    .button-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background-color: #3498db;
+      color: #ffffff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover { background-color: #2980b9; }
+    .btn-secondary {
+      background-color: #444;
+    }
+    .btn-secondary:hover { background-color: #555; }
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      margin-left: -125px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 4px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      left: 50%;
+      bottom: 30px;
+      font-size: 1rem;
+    }
+    #toast.show {
+      visibility: visible;
+      -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+    @-webkit-keyframes fadein {
+      from {bottom: 0; opacity: 0;} 
+      to {bottom: 30px; opacity: 1;}
+    }
+    @keyframes fadein {
+      from {bottom: 0; opacity: 0;}
+      to {bottom: 30px; opacity: 1;}
+    }
+    @-webkit-keyframes fadeout {
+      from {bottom: 30px; opacity: 1;} 
+      to {bottom: 0; opacity: 0;}
+    }
+    @keyframes fadeout {
+      from {bottom: 30px; opacity: 1;}
+      to {bottom: 0; opacity: 0;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Your Route is Ready!</h1>
+    <div class="subtitle">Scan this QR code with your phone's camera to open the turn-by-turn map on your mobile device.</div>
+    
+    <div id="qrcode"></div>
+    
+    <div class="url-display" id="urlDisplay">Generating link...</div>
+    
+    <div class="button-group">
+      <button class="btn btn-secondary" onclick="copyUrl()">Copy Link</button>
+      <a href="#" id="openMapBtn" class="btn">Open Map on this Device</a>
+    </div>
+  </div>
+
+  <div id="toast">Link copied to clipboard!</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const runId = urlParams.get('id');
+      
+      if (!runId) {
+        document.querySelector('.container').innerHTML = `
+          <h1>Error: No Route Found</h1>
+          <div class="subtitle">We couldn't find a route ID in the URL. Please go back to the upload page and try again.</div>
+          <a href="/upload" class="btn">Go to Upload Page</a>
+        `;
+        return;
+      }
+
+      // Construct the full map URL
+      const mapUrl = window.location.origin + '/map?id=' + encodeURIComponent(runId);
+      
+      // Display the URL
+      document.getElementById('urlDisplay').textContent = mapUrl;
+      
+      // Update the "Open Map" button
+      document.getElementById('openMapBtn').href = mapUrl;
+      
+      // Generate the QR Code
+      new QRCode(document.getElementById("qrcode"), {
+        text: mapUrl,
+        width: 256,
+        height: 256,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+    });
+
+    function copyUrl() {
+      const url = document.getElementById('urlDisplay').textContent;
+      navigator.clipboard.writeText(url).then(() => {
+        const toast = document.getElementById("toast");
+        toast.className = "show";
+        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+      }).catch(err => {
+        alert("Failed to copy link: " + err);
+      });
+    }
+  </script>
+</body>
+</html>

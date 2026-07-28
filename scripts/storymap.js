@@ -20,8 +20,14 @@ $(window).on('load', function() {
   var urlParams = new URLSearchParams(window.location.search);
   var runId = urlParams.get('id');
   
-  var chaptersCsv = runId ? 'Chapters_' + runId + '.csv' : 'Chapters.csv';
-  var metadataJson = runId ? 'metadata_' + runId + '.json' : 'metadata.json';
+  if (!runId) {
+    alert("Error: No route ID provided. Redirecting to upload page.");
+    window.location.href = "/upload";
+    return; // Stop execution
+  }
+  
+  var chaptersCsv = 'Chapters_' + runId + '.csv';
+  var metadataJson = 'metadata_' + runId + '.json';
 
   $.get(githubBaseUrl + 'Options.csv?time=' + timestamp, function(options) {
     $.get(githubBaseUrl + chaptersCsv + '?time=' + timestamp, function(chapters) {

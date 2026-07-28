@@ -136,7 +136,7 @@ def api_geocode_suggest():
     suggestions = suggest_addresses(query)
     return jsonify({'suggestions': suggestions})
 
-def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, newspaper_counts, not_routed_addresses=None):
+def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, newspaper_counts, not_routed_addresses=None, run_id='default'):
     try:
         JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Optimizing road route...'}
         
@@ -161,13 +161,14 @@ def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, new
         }
         
         # 4. Sync with GitHub
-        success = sync_chapters_and_metadata_to_github(csv_content, metadata)
+        success = sync_chapters_and_metadata_to_github(csv_content, metadata, run_id)
         
         if success:
             JOB_STATUSES[job_id] = {
                 'status': 'completed',
                 'message': 'Successfully processed route and updated GitHub!',
-                'metadata': metadata
+                'metadata': metadata,
+                'run_id': run_id
             }
         else:
             JOB_STATUSES[job_id] = {
@@ -192,12 +193,25 @@ def api_process_route():
     if not confirmed:
         return jsonify({'error': 'No valid addresses provided for routing'}), 400
         
+    driver_name = data.get('driver_name', 'Unknown')
+    
+    if driver_name.lower() == 'test':
+        run_id = 'test'
+    else:
+        # Sanitize driver name for filenames (alphanumeric and dashes only)
+        import re
+        safe_name = re.sub(r'[^a-zA-Z0-9-]', '', driver_name).lower()
+        if not safe_name: safe_name = "user"
+        from datetime import datetime
+        pst_time = datetime.utcnow().strftime("%Y%m%d-%H%M%S") # simplified to UTC for ID generation, github_sync does real PST
+        run_id = f"{safe_name}-{pst_time}"
+
     job_id = str(uuid.uuid4())
     JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Job started...'}
     
     thread = threading.Thread(
         target=run_route_processing_job,
-        args=(job_id, confirmed, unconfirmed_count, newspaper_counts, not_routed)
+        args=(job_id, confirmed, unconfirmed_count, newspaper_counts, not_routed, run_id)
     )
     thread.daemon = True
     thread.start()

@@ -84,6 +84,11 @@
     </div>
     <div class="subtitle">Upload your delivery route PDF to extract addresses and compute optimized driving routes.</div>
 
+    <div style="margin-bottom: 20px;">
+      <label for="driverName" style="display:block; font-weight:600; margin-bottom:8px; color:#eeeeee;">Driver Name (Required):</label>
+      <input type="text" id="driverName" placeholder="Enter your name..." style="width:100%; padding:12px; border-radius:4px; border:1px solid #333; background:#1e1e1e; color:#fff; font-size:1rem;" required>
+    </div>
+
     <div class="dropzone" id="dropzone">
       <div class="dropzone-icon">📄</div>
       <div class="dropzone-text">Drag and drop your route PDF here</div>
@@ -215,8 +220,17 @@
     }
 
     function handleFiles(files) {
+      const driverNameInput = document.getElementById('driverName').value.trim();
+      if (!driverNameInput) {
+        statusMsg.style.color = '#ff6b6b';
+        statusMsg.textContent = 'Error: Please enter a Driver Name before uploading.';
+        return;
+      }
+      localStorage.setItem('driverName', driverNameInput);
+      
       let hasValid = false;
       const formData = new FormData();
+      formData.append('driver_name', driverNameInput);
       
       for (let i = 0; i < files.length; i++) {
         const f = files[i];

@@ -17,9 +17,15 @@ $(window).on('load', function() {
   var timestamp = Date.now();
   var githubBaseUrl = 'https://raw.githubusercontent.com/stephend-csu/newspaper-v4/main/csv/';
 
+  var urlParams = new URLSearchParams(window.location.search);
+  var runId = urlParams.get('id');
+  
+  var chaptersCsv = runId ? 'Chapters_' + runId + '.csv' : 'Chapters.csv';
+  var metadataJson = runId ? 'metadata_' + runId + '.json' : 'metadata.json';
+
   $.get(githubBaseUrl + 'Options.csv?time=' + timestamp, function(options) {
-    $.get(githubBaseUrl + 'Chapters.csv?time=' + timestamp, function(chapters) {
-      $.getJSON(githubBaseUrl + 'metadata.json?time=' + timestamp, function(metadata) {
+    $.get(githubBaseUrl + chaptersCsv + '?time=' + timestamp, function(chapters) {
+      $.getJSON(githubBaseUrl + metadataJson + '?time=' + timestamp, function(metadata) {
         initMap(
           $.csv.toObjects(options),
           $.csv.toObjects(chapters),
@@ -507,7 +513,7 @@ $(window).on('load', function() {
 
   function changeAttribution() {
     var attributionHTML = $('.leaflet-control-attribution')[0].innerHTML;
-    var credit = 'View <a href="https://raw.githubusercontent.com/stephend-csu/newspaper-v4/main/csv/Chapters.csv" target="_blank">data</a>';
+    var credit = 'View <a href="' + githubBaseUrl + chaptersCsv + '" target="_blank">data</a>';
     var name = getSetting('_authorName');
     var url = getSetting('_authorURL');
 

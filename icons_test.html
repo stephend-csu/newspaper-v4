@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Options Test - Expanded</title>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Google Fonts for sleek typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h2 { text-align: center; color: #1a202c; }
+        .option-card {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .option-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .preview-box {
+            padding: 20px;
+            border-radius: 8px;
+            background: #f8fafc;
+            text-align: center;
+        }
+        .miles-to-next {
+            color: #4a5568;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>10 Creative Layouts</h2>
+
+    <!-- Option 1: Classic FontAwesome Chevrons -->
+    <div class="option-card">
+        <div class="option-title">Option 1: Minimalist Chevrons</div>
+        <div class="preview-box">
+            <div class="miles-to-next">
+                0.20mi 
+                <span style="color:#a0aec0; margin: 0 8px;">
+                    <i class="fa fa-angle-left"></i><i class="fa fa-angle-right" style="margin-left: -4px;"></i>
+                </span>
+                0.50mi
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 2: The Timeline Track -->
+    <div class="option-card">
+        <div class="option-title">Option 2: The Timeline Track</div>
+        <div class="preview-box">
+            <div class="miles-to-next" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span style="color: #718096;">0.20mi</span>
+                <div style="flex-grow: 0; width: 40px; height: 2px; background: #cbd5e0; position: relative;">
+                    <div style="position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: #4299e1;"></div>
+                </div>
+                <span style="color: #2d3748; font-weight: 600;">0.50mi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 3: Modern Badges -->
+    <div class="option-card">
+        <div class="option-title">Option 3: Modern Badges</div>
+        <div class="preview-box">
+            <div class="miles-to-next" style="display: flex; justify-content: center; gap: 12px; font-size: 0.85em;">
+                <div style="background: #f1f5f9; padding: 4px 10px; border-radius: 16px; color: #64748b;">
+                    <i class="fa fa-reply" style="font-size: 0.8em; margin-right: 4px;"></i> 0.20mi
+                </div>
+                <div style="background: #e0f2fe; padding: 4px 10px; border-radius: 16px; color: #0369a1; font-weight: 600;">
+                    0.50mi <i class="fa fa-share" style="font-size: 0.8em; margin-left: 4px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 4: The Delivery Car -->
+    <div class="option-card">
+        <div class="option-title">Option 4: The Delivery Car (Directional)</div>
+        <div class="preview-box">
+            <div class="miles-to-next">
+                <span style="color: #a0aec0;">0.20mi</span>
+                <span style="color: #3182ce; margin: 0 12px; font-size: 1.1em;">
+                    <i class="fa fa-car"></i>
+                </span>
+                <span style="font-weight: 600;">0.50mi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 5: Smooth SVG Flow -->
+    <div class="option-card">
+        <div class="option-title">Option 5: Smooth SVG Flow</div>
+        <div class="preview-box">
+            <div class="miles-to-next" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <span style="color: #718096;">0.20mi</span>
+                <svg width="30" height="10" viewBox="0 0 30 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 5H28M28 5L24 1M28 5L24 9" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span style="font-weight: 600;">0.50mi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 6: Step-by-Step Vertical Separator -->
+    <div class="option-card">
+        <div class="option-title">Option 6: Vertical Separator</div>
+        <div class="preview-box">
+            <div class="miles-to-next">
+                <span style="color: #a0aec0; padding-right: 12px; border-right: 2px solid #e2e8f0;">0.20mi</span>
+                <span style="padding-left: 12px; font-weight: 600;">0.50mi <i class="fa fa-arrow-right" style="font-size: 0.8em; color: #a0aec0; margin-left: 4px;"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 7: "Arr / Dep" Logistics Style -->
+    <div class="option-card">
+        <div class="option-title">Option 7: Logistics Text Blocks</div>
+        <div class="preview-box">
+            <div class="miles-to-next" style="display: flex; justify-content: center; gap: 20px; font-size: 0.85em;">
+                <div style="text-align: right; color: #718096;">
+                    <div style="font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">From Last</div>
+                    <div>0.20mi</div>
+                </div>
+                <div style="width: 1px; background: #cbd5e0;"></div>
+                <div style="text-align: left; font-weight: 600; color: #2b6cb0;">
+                    <div style="font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px;">To Next</div>
+                    <div>0.50mi</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 8: Dashboard Double Arrow -->
+    <div class="option-card">
+        <div class="option-title">Option 8: Dashboard Double Arrow</div>
+        <div class="preview-box">
+            <div class="miles-to-next">
+                0.20mi 
+                <span style="color: #a0aec0; margin: 0 10px; font-size: 0.8em;">
+                    <i class="fa fa-chevron-right"></i><i class="fa fa-chevron-right"></i>
+                </span>
+                <span style="font-weight: 600;">0.50mi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 9: Subdued Dashed Line -->
+    <div class="option-card">
+        <div class="option-title">Option 9: Subdued Dashed Line</div>
+        <div class="preview-box">
+            <div class="miles-to-next" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span style="color: #a0aec0;">0.20mi</span>
+                <div style="border-bottom: 2px dashed #cbd5e0; width: 30px; height: 1px;"></div>
+                <span style="font-weight: 600;">0.50mi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option 10: "Origin & Destination" Pins -->
+    <div class="option-card">
+        <div class="option-title">Option 10: Origin & Destination Pins</div>
+        <div class="preview-box">
+            <div class="miles-to-next" style="display: flex; justify-content: center; gap: 15px;">
+                <span style="color: #718096;"><i class="fa fa-dot-circle-o" style="color: #a0aec0; margin-right: 4px;"></i> 0.20mi</span>
+                <span style="color: #cbd5e0;">---</span>
+                <span style="font-weight: 600; color: #c53030;"><i class="fa fa-map-marker" style="margin-right: 4px;"></i> 0.50mi</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -585,7 +585,8 @@
         confirmed_valid_addresses: routeData.valid_addresses,
         unconfirmed_count: routeData.problem_addresses ? routeData.problem_addresses.length : 0,
         newspaper_counts: routeData.newspaper_counts || {},
-        not_routed_addresses: notRouted
+        not_routed_addresses: notRouted,
+        driver_name: localStorage.getItem('driverName') || 'Unknown'
       };
 
       fetch('/api/process-route', {
@@ -621,7 +622,11 @@
               clearInterval(interval);
               statusText.textContent = 'Route completed and uploaded to GitHub! Redirecting to main map...';
               setTimeout(() => {
-                window.location.href = '/map';
+                if (data.run_id && data.run_id !== 'default') {
+                  window.location.href = `/map?id=${data.run_id}`;
+                } else {
+                  window.location.href = '/map';
+                }
               }, 1200);
             } else if (data.status === 'error') {
               clearInterval(interval);

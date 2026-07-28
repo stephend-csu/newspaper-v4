@@ -408,8 +408,13 @@ $(window).on('load', function() {
               }).addTo(map);
             }
 
-            var zoomLevel = m['_zoom'] || 18;
-            map.flyTo(m.getLatLng(), zoomLevel, { animate: true, duration: 2 });
+            if (i > 2 && markers[i-1]) {
+              var bounds = L.latLngBounds(markers[i-1].getLatLng(), m.getLatLng());
+              map.flyToBounds(bounds, { animate: true, duration: 2, padding: [50, 50] });
+            } else {
+              var zoomLevel = m['_zoom'] || 18;
+              map.flyTo(m.getLatLng(), zoomLevel, { animate: true, duration: 2 });
+            }
           }
           break;
         }

@@ -308,12 +308,20 @@ $(window).on('load', function() {
         paperBadgesHtml += '</div>';
       }
 
-      var milesVal = c['Miles to Next'] || c['Description'] || '';
+      var milesToNextVal = c['Miles to Next'];
+      var milesFromLastVal = idx > 0 ? chapters[idx - 1]['Miles to Next'] : null;
+
       var milesHtml = '';
-      if (milesVal && !isNaN(parseFloat(milesVal))) {
-        milesHtml = `<div class="miles-to-next"><i class="fa fa-car"></i> ${parseFloat(milesVal).toFixed(2)} miles to next stop</div>`;
-      } else if (c['Description'] && c['Description'].toLowerCase().includes('start')) {
+      if (idx === 0 || (c['Description'] && c['Description'].toLowerCase().includes('start'))) {
         milesHtml = `<div class="miles-to-next"><i class="fa fa-flag-checkered"></i> Start Location</div>`;
+        if (milesToNextVal && !isNaN(parseFloat(milesToNextVal))) {
+          milesHtml += `<div class="miles-to-next" style="margin-top: 5px; color: #a0aec0; font-size: 0.85em;"><span>&#x2198;&#xFE0F;</span> ${parseFloat(milesToNextVal).toFixed(2)}mi</div>`;
+        }
+      } else {
+        var toNext = (milesToNextVal && !isNaN(parseFloat(milesToNextVal))) ? parseFloat(milesToNextVal).toFixed(2) : '--';
+        var fromLast = (milesFromLastVal && !isNaN(parseFloat(milesFromLastVal))) ? parseFloat(milesFromLastVal).toFixed(2) : '--';
+        
+        milesHtml = `<div class="miles-to-next" style="color: #a0aec0; font-size: 0.85em; font-weight: 500;">${fromLast}mi <span>&#x2197;&#xfe0f;</span> &nbsp;&nbsp; <span>&#x2198;&#xFE0F;</span> ${toNext}mi</div>`;
       }
 
       // Cuter grayscale button with downward facing triangle

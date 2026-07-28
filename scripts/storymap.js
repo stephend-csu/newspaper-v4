@@ -315,13 +315,21 @@ $(window).on('load', function() {
       if (idx === 0 || (c['Description'] && c['Description'].toLowerCase().includes('start'))) {
         milesHtml = `<div class="miles-to-next"><i class="fa fa-flag-checkered"></i> Start Location</div>`;
         if (milesToNextVal && !isNaN(parseFloat(milesToNextVal))) {
-          milesHtml += `<div class="miles-to-next" style="margin-top: 5px; color: #a0aec0; font-size: 0.85em;"><span>&#x2198;&#xFE0F;</span> ${parseFloat(milesToNextVal).toFixed(2)}mi</div>`;
+          milesHtml += `<div class="miles-to-next" style="margin-top: 5px; color: #718096; font-size: 0.9em;"><i class="fa fa-arrow-down" style="font-size: 0.8em; margin-right: 4px;"></i> ${parseFloat(milesToNextVal).toFixed(2)}mi</div>`;
         }
       } else {
         var toNext = (milesToNextVal && !isNaN(parseFloat(milesToNextVal))) ? parseFloat(milesToNextVal).toFixed(2) : '--';
         var fromLast = (milesFromLastVal && !isNaN(parseFloat(milesFromLastVal))) ? parseFloat(milesFromLastVal).toFixed(2) : '--';
         
-        milesHtml = `<div class="miles-to-next" style="color: #a0aec0; font-size: 0.85em; font-weight: 500;">${fromLast}mi <span>&#x2197;&#xfe0f;</span> &nbsp;&nbsp; <span>&#x2198;&#xFE0F;</span> ${toNext}mi</div>`;
+        milesHtml = `
+          <div class="miles-to-next" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; font-size: 0.9em;">
+              <span style="color: #2d3748; font-weight: 600;">${fromLast}mi</span>
+              <div style="flex-grow: 0; width: 40px; height: 2px; background: #cbd5e0; position: relative;">
+                  <div style="position: absolute; top: -3px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: #4299e1;"></div>
+              </div>
+              <span style="color: #718096;">${toNext}mi</span>
+          </div>
+        `;
       }
 
       // Cuter grayscale button with downward facing triangle

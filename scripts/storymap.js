@@ -4,14 +4,14 @@ $(window).on('load', function() {
   const CHAPTER_ZOOM = 15;
 
   var newspaperColors = {
-    'EBT': '#e63946',
+    'EBT': '#ff0000',
     'WSJ': '#6c757d',
-    'CAP': '#457b9d',
-    'NYT': '#0077b6',
-    'SFC': '#f4a261',
-    'UST': '#2a9d8f',
-    'WLD': '#9c27b0',
-    'STD': '#e76f51'
+    'CAP': '#00bfff',
+    'NYT': '#0000ff',
+    'SFC': '#ff6600',
+    'UST': '#00cc00',
+    'WLD': '#cc00ff',
+    'STD': '#ff3300'
   };
 
   var timestamp = Date.now();
@@ -137,7 +137,7 @@ $(window).on('load', function() {
     if (metadata && metadata.upload_timestamp_pst) {
       var pubTimeStr = metadata.upload_timestamp_pst;
       var waitTimeStr = pubTimeStr;
-      var match = pubTimeStr.match(/(.*) (\d{1,2}):(\d{2}) (AM|PM) (PST|PDT)/);
+      var match = pubTimeStr.match(/(.*) (\d{1,2}):(\d{2})(?::\d{2})? (AM|PM) (PST|PDT)/);
       if (match) {
           var hours = parseInt(match[2], 10);
           var mins = parseInt(match[3], 10);

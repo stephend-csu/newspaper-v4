@@ -7,6 +7,8 @@ import urllib.parse
 import math
 from concurrent.futures import ThreadPoolExecutor
 from geocoder import geocode_address_candidate
+from ortools.constraint_solver import routing_enums_pb2
+from ortools.constraint_solver import pywrapcp
 
 START_ADDRESS = {
     'raw_address': '2505 Dean Lesher Dr',
@@ -66,162 +68,89 @@ def calculate_haversine_distance_miles(lat1, lon1, lat2, lon2):
     direct_miles = 3958.8 * c
     return round(direct_miles * 1.3, 1)
 
-def fast_tsp_solver(address_list):
+def get_osrm_time_matrix(address_list):
     n = len(address_list)
-    if n <= 1:
-        return address_list, [0.0] * n
-        
-    unvisited = list(range(1, n))
-    route_indices = [0]
+    matrix = [[0.0] * n for _ in range(n)]
     
-    current = 0
-    while unvisited:
-        curr_obj = address_list[current]
-        best_next = None
-        best_dist = float('inf')
+    # OSRM public API limits total coordinates in URL to 100.
+    # Chunking requests into 50x50 sub-matrices to stay within 100 total coordinates per request.
+    CHUNK = 50
+    for i_start in range(0, n, CHUNK):
+        i_end = min(i_start + CHUNK, n)
+        chunk_src = address_list[i_start:i_end]
         
-        for cand in unvisited:
-            cand_obj = address_list[cand]
-            dist = calculate_haversine_distance_miles(
-                curr_obj['lat'], curr_obj['lon'],
-                cand_obj['lat'], cand_obj['lon']
-            )
-            if dist < best_dist:
-                best_dist = dist
-                best_next = cand
-                
-        route_indices.append(best_next)
-        unvisited.remove(best_next)
-        current = best_next
-        
-    # 2-Opt local search refinement
-    improved = True
-    passes = 0
-    while improved and passes < 5:
-        improved = False
-        passes += 1
-        for i in range(1, n - 2):
-            for j in range(i + 1, n - 1):
-                p_i = address_list[route_indices[i - 1]]
-                p_i_next = address_list[route_indices[i]]
-                p_j = address_list[route_indices[j]]
-                p_j_next = address_list[route_indices[j + 1]]
-                
-                d_curr = calculate_haversine_distance_miles(p_i['lat'], p_i['lon'], p_i_next['lat'], p_i_next['lon']) + \
-                         calculate_haversine_distance_miles(p_j['lat'], p_j['lon'], p_j_next['lat'], p_j_next['lon'])
-                         
-                d_swap = calculate_haversine_distance_miles(p_i['lat'], p_i['lon'], p_j['lat'], p_j['lon']) + \
-                         calculate_haversine_distance_miles(p_i_next['lat'], p_i_next['lon'], p_j_next['lat'], p_j_next['lon'])
-                         
-                if d_swap < d_curr:
-                    route_indices[i:j + 1] = reversed(route_indices[i:j + 1])
-                    improved = True
+        for j_start in range(0, n, CHUNK):
+            j_end = min(j_start + CHUNK, n)
+            chunk_dst = address_list[j_start:j_end]
+            
+            unique_coords = []
+            coord_to_idx = {}
+            for item in chunk_src + chunk_dst:
+                c = (item['lon'], item['lat'])
+                if c not in coord_to_idx:
+                    coord_to_idx[c] = len(unique_coords)
+                    unique_coords.append(c)
                     
-    ordered_list = [address_list[idx] for idx in route_indices]
-    
-    leg_miles = []
-    for i in range(len(ordered_list) - 1):
-        w1 = ordered_list[i]
-        w2 = ordered_list[i + 1]
-        dist = calculate_haversine_distance_miles(w1['lat'], w1['lon'], w2['lat'], w2['lon'])
-        leg_miles.append(dist)
-    leg_miles.append(0.0)
-    
-    return ordered_list, leg_miles
-
-def normalize_street_name(street_name):
-    s = street_name.lower().strip()
-    s = re.sub(r'\b(court|ct)\b', 'ct', s)
-    s = re.sub(r'\b(drive|dr)\b', 'dr', s)
-    s = re.sub(r'\b(lane|ln)\b', 'ln', s)
-    s = re.sub(r'\b(road|rd)\b', 'rd', s)
-    s = re.sub(r'\b(avenue|ave)\b', 'ave', s)
-    s = re.sub(r'\b(boulevard|blvd)\b', 'blvd', s)
-    s = re.sub(r'\b(circle|cir)\b', 'cir', s)
-    s = re.sub(r'\b(place|pl)\b', 'pl', s)
-    s = re.sub(r'\b(street|st)\b', 'st', s)
-    s = re.sub(r'\b(terrace|ter)\b', 'ter', s)
-    s = re.sub(r'\b(parkway|pkwy)\b', 'pkwy', s)
-    return s
-
-def extract_house_number_and_street(full_address):
-    """
-    Extracts integer house number and normalized street name from an address string.
-    e.g. '91 Arbolado Dr, Walnut Creek, CA' -> (91, 'arbolado dr')
-    """
-    street_part = full_address.split(',')[0].strip()
-    match = re.match(r'^(\d+)\s+(.+)$', street_part)
-    if match:
-        num = int(match.group(1))
-        street_name = normalize_street_name(match.group(2))
-        return num, street_name
-    return 0, normalize_street_name(street_part)
-
-def cluster_streets_post_process(route_waypoints):
-    """
-    Post-processes the TSP route sequence to group multi-address streets together.
-    If the first encountered address of a street group is at or before the middle position
-    of that group in the TSP sequence, substitutes all addresses for that street in ascending house order.
-    Otherwise, substitutes all addresses for that street in descending house order.
-    Original addresses are removed from subsequent positions.
-    """
-    if len(route_waypoints) <= 2:
-        return route_waypoints
-
-    start_waypoint = route_waypoints[0]
-    delivery_waypoints = route_waypoints[1:]
-
-    # Group delivery waypoints by normalized street name
-    street_groups = {}
-    for idx, item in enumerate(delivery_waypoints):
-        num, street_name = extract_house_number_and_street(item['full_address'])
-        if street_name not in street_groups:
-            street_groups[street_name] = []
-        street_groups[street_name].append((idx, item, num))
-
-    # Pre-determine target insertion order for each multi-address street group
-    group_orders = {}
-    for street_name, members in street_groups.items():
-        if len(members) <= 1:
-            group_orders[street_name] = [m[1] for m in members]
-        else:
-            positions = [m[0] for m in members]
-            first_idx = positions[0]
-            middle_idx = (min(positions) + max(positions)) / 2.0
+            coords_str = ";".join([f"{lon:.6f},{lat:.6f}" for lon, lat in unique_coords])
+            src_str = ";".join([str(coord_to_idx[(item['lon'], item['lat'])]) for item in chunk_src])
+            dst_str = ";".join([str(coord_to_idx[(item['lon'], item['lat'])]) for item in chunk_dst])
             
-            ascending = sorted(members, key=lambda m: m[2])
-            if first_idx <= middle_idx:
-                group_orders[street_name] = [m[1] for m in ascending]
-            else:
-                descending = sorted(members, key=lambda m: m[2], reverse=True)
-                group_orders[street_name] = [m[1] for m in descending]
+            url = f"https://router.project-osrm.org/table/v1/driving/{coords_str}?sources={src_str}&destinations={dst_str}&annotations=duration"
+            
+            try:
+                resp = requests.get(url, timeout=10)
+                if resp.status_code == 200:
+                    durations = resp.json().get('durations', [])
+                    for idx_i, r in enumerate(durations):
+                        for idx_j, val in enumerate(r):
+                            matrix[i_start + idx_i][j_start + idx_j] = val if val is not None else 999999.0
+                else:
+                    raise Exception("API error")
+            except Exception as e:
+                print(f"Fallback to Haversine for matrix chunk: {e}")
+                for idx_i in range(len(chunk_src)):
+                    for idx_j in range(len(chunk_dst)):
+                        lat1, lon1 = chunk_src[idx_i]['lat'], chunk_src[idx_i]['lon']
+                        lat2, lon2 = chunk_dst[idx_j]['lat'], chunk_dst[idx_j]['lon']
+                        dist = calculate_haversine_distance_miles(lat1, lon1, lat2, lon2)
+                        matrix[i_start + idx_i][j_start + idx_j] = dist * 120.0 # roughly 30mph
 
-    # Reconstruct final route by substituting street groups at their first occurrence
-    processed_streets = set()
-    new_delivery_waypoints = []
+    return matrix
 
-    for idx, item in enumerate(delivery_waypoints):
-        _, street_name = extract_house_number_and_street(item['full_address'])
+def solve_tsp_ortools(address_list, time_matrix):
+    n = len(time_matrix)
+    if n <= 1:
+        return address_list
         
-        if street_name in processed_streets:
-            continue
-            
-        cluster = group_orders[street_name]
-        new_delivery_waypoints.extend(cluster)
-        processed_streets.add(street_name)
-
-    final_waypoints = [start_waypoint] + new_delivery_waypoints
-
-    # Recalculate leg miles for consecutive stops in the new street-clustered sequence
-    for i in range(len(final_waypoints) - 1):
-        w1 = final_waypoints[i]
-        w2 = final_waypoints[i + 1]
-        dist = calculate_haversine_distance_miles(w1['lat'], w1['lon'], w2['lat'], w2['lon'])
-        w1['miles_to_next'] = dist
-    if final_waypoints:
-        final_waypoints[-1]['miles_to_next'] = 0.0
-
-    return final_waypoints
+    manager = pywrapcp.RoutingIndexManager(n, 1, 0)
+    routing = pywrapcp.RoutingModel(manager)
+    
+    def distance_callback(from_index, to_index):
+        from_node = manager.IndexToNode(from_index)
+        to_node = manager.IndexToNode(to_index)
+        return int(time_matrix[from_node][to_node])
+        
+    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+    
+    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+    search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+    search_parameters.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+    search_parameters.time_limit.seconds = 5
+    
+    solution = routing.SolveWithParameters(search_parameters)
+    
+    if solution:
+        ordered_list = []
+        index = routing.Start(0)
+        while not routing.IsEnd(index):
+            node_index = manager.IndexToNode(index)
+            ordered_list.append(address_list[node_index])
+            index = solution.Value(routing.NextVar(index))
+        # Don't append start node at the end again
+        return ordered_list
+    else:
+        return address_list
 
 def optimize_road_route(confirmed_addresses):
     addr_dict = {}
@@ -262,32 +191,11 @@ def optimize_road_route(confirmed_addresses):
     # Live geocode all coordinates in parallel via ArcGIS
     ensure_all_coordinates_parallel(address_list)
     
-    # Solve TSP route via fast 2-Opt road distance optimizer
-    route_waypoints, leg_miles = fast_tsp_solver(address_list)
+    # Fetch real driving time matrix
+    time_matrix = get_osrm_time_matrix(address_list)
     
-    # If waypoints count <= 35, attempt OSRM API refinement with short 5s timeout
-    if len(route_waypoints) <= 35:
-        try:
-            coords_str = ";".join([f"{item['lon']:.6f},{item['lat']:.6f}" for item in route_waypoints])
-            url = f"https://router.project-osrm.org/trip/v1/driving/{coords_str}?source=first&overview=false&steps=false"
-            resp = requests.get(url, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                if data.get('code') == 'Ok' and data.get('trips'):
-                    trip = data['trips'][0]
-                    waypoints_info = data.get('waypoints', [])
-                    
-                    ordered = [None] * len(route_waypoints)
-                    for orig_idx, wp in enumerate(waypoints_info):
-                        order_pos = wp['waypoint_index']
-                        ordered[order_pos] = route_waypoints[orig_idx]
-                        
-                    route_waypoints = [w for w in ordered if w is not None]
-        except Exception as e:
-            print(f"OSRM API call notice: {e}. Using fast local TSP route.")
-
-    # Apply street-clustering post-processing reordering
-    route_waypoints = cluster_streets_post_process(route_waypoints)
+    # Solve strictly constrained TSP using OR-Tools
+    route_waypoints = solve_tsp_ortools(address_list, time_matrix)
         
     # Fetch full route geometries for each leg
     route_segments = []

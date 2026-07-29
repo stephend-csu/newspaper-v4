@@ -15,7 +15,7 @@ $(window).on('load', function() {
   };
 
   var timestamp = Date.now();
-  var githubBaseUrl = 'https://raw.githubusercontent.com/stephend-csu/newspaper-v4/main/csv/';
+  var githubBaseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'csv/' : 'https://raw.githubusercontent.com/stephend-csu/newspaper-v4/main/csv/';
 
   var urlParams = new URLSearchParams(window.location.search);
   var runId = urlParams.get('id');
@@ -326,15 +326,15 @@ $(window).on('load', function() {
       var milesHtml = '';
       if (idx === 0 || (c['Description'] && c['Description'].toLowerCase().includes('start'))) {
         milesHtml = `<div class="miles-to-next"><i class="fa fa-flag-checkered"></i> Start Location</div>`;
-        if (milesToNextVal && !isNaN(parseFloat(milesToNextVal))) {
-          milesHtml += `<div class="miles-to-next" style="margin-top: 5px; color: #718096; font-size: 0.9em;"><i class="fa fa-arrow-down" style="font-size: 0.8em; margin-right: 4px;"></i> ${parseFloat(milesToNextVal).toFixed(2)}mi</div>`;
+        if (milesToNextVal) {
+          milesHtml += `<div class="miles-to-next" style="margin-top: 5px; color: #718096; font-size: 1.125em;"><i class="fa fa-arrow-down" style="font-size: 0.8em; margin-right: 4px;"></i> ${parseFloat(milesToNextVal).toFixed(2)}mi</div>`;
         }
       } else {
         var toNext = (milesToNextVal && !isNaN(parseFloat(milesToNextVal))) ? parseFloat(milesToNextVal).toFixed(2) : '--';
         var fromLast = (milesFromLastVal && !isNaN(parseFloat(milesFromLastVal))) ? parseFloat(milesFromLastVal).toFixed(2) : '--';
         
         milesHtml = `
-          <div class="miles-to-next" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; font-size: 0.9em;">
+          <div class="miles-to-next" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; font-size: 1.125em;">
               <span style="color: #2d3748; font-weight: 600;">${fromLast}mi</span>
               <div style="flex-grow: 0; width: 40px; height: 2px; background: #cbd5e0; position: relative;">
                   <div style="position: absolute; top: -3px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: #4299e1;"></div>
@@ -344,8 +344,12 @@ $(window).on('load', function() {
         `;
       }
 
-      // Cuter grayscale button with downward facing triangle
-      var nextBtnHtml = `<button type="button" class="btn-next-address" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})" title="Advance to next address"><span class="cute-triangle">▾</span></button>`;
+      // Cuter grayscale button with downward facing triangle and flag
+      var nextBtnHtml = `
+      <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 6px;">
+        <i class="fa fa-flag delivery-flag" data-state="0" style="font-size: 1.8rem; color: #cbd5e0; cursor: pointer; transition: color 0.2s;" onclick="toggleDeliveryFlag(this)" title="Toggle delivery status"></i>
+        <button type="button" class="btn-next-address" style="margin-top: 0;" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})" title="Advance to next address"><span class="cute-triangle">▾</span></button>
+      </div>`;
 
       container
         .append(headerHtml)
@@ -363,13 +367,27 @@ $(window).on('load', function() {
     });
 
     window.handleNextAddressClick = function(btnElem, targetIdx) {
-      $(btnElem).addClass('pushed').html('<span class="cute-triangle">▾</span> ✓');
+      $(btnElem).addClass('pushed');
       var targetDiv = $('#container' + targetIdx);
       if (targetDiv.length) {
         var scrollPos = targetDiv.offset().top - $('#contents').offset().top + $('#contents').scrollTop() - 20;
         $('#contents').animate({
           scrollTop: scrollPos
         }, 500);
+      }
+    };
+    
+    window.toggleDeliveryFlag = function(iconElem) {
+      var state = parseInt($(iconElem).attr('data-state') || '0');
+      state = (state + 1) % 3;
+      $(iconElem).attr('data-state', state);
+      
+      if (state === 1) {
+        $(iconElem).css('color', '#e53e3e'); // Red
+      } else if (state === 2) {
+        $(iconElem).css('color', '#3182ce'); // Blue
+      } else {
+        $(iconElem).css('color', '#cbd5e0'); // Original unpressed
       }
     };
 

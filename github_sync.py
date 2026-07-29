@@ -28,9 +28,9 @@ def sync_chapters_and_metadata_to_github(csv_content_str, metadata_dict, run_id=
         meta_local = os.path.join(os.path.dirname(__file__), 'csv', meta_filename)
         os.makedirs(os.path.dirname(csv_local), exist_ok=True)
         
-        with open(csv_local, 'w', encoding='utf-8') as f:
+        with open(csv_local, 'w', encoding='utf-8', newline='') as f:
             f.write(csv_content_str)
-        with open(meta_local, 'w', encoding='utf-8') as f:
+        with open(meta_local, 'w', encoding='utf-8', newline='') as f:
             f.write(metadata_json_str)
         print(f"Successfully saved route files locally at {pst_time}")
     except Exception as e:

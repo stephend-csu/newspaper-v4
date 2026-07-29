@@ -346,9 +346,12 @@ $(window).on('load', function() {
 
       // Cuter grayscale button with downward facing triangle and flag
       var nextBtnHtml = `
-      <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 6px;">
-        <i class="fa fa-flag delivery-flag" data-state="0" style="font-size: 1.8rem; color: #cbd5e0; cursor: pointer; transition: color 0.2s;" onclick="toggleDeliveryFlag(this)" title="Toggle delivery status"></i>
+      <div style="display: flex; justify-content: center; align-items: center; margin-top: 6px;">
+        <div style="width: 50px; display: flex; justify-content: flex-end; margin-right: 15px;">
+          <i class="fas fa-flag delivery-flag" data-state="0" style="font-size: 1.8rem; color: #cbd5e0; cursor: pointer; padding: 12px; touch-action: manipulation; -webkit-tap-highlight-color: transparent;" onclick="toggleDeliveryFlag(this)" title="Toggle delivery status"></i>
+        </div>
         <button type="button" class="btn-next-address" style="margin-top: 0;" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})" title="Advance to next address"><span class="cute-triangle">▾</span></button>
+        <div style="width: 50px; margin-left: 15px;"></div>
       </div>`;
 
       container

@@ -1,11 +1,8 @@
-# Newspaper Route Delivery Platform
+# Newspaper Delivery Route Optimizer
 
-This repository contains the dynamic, multi-user routing system for optimizing newspaper delivery routes. 
+This project automatically extracts addresses from delivery PDFs, geocodes them, and optimizes a vehicle route using the OR-Tools TSP solver with time matrices from OSRM. 
 
-## Multi-User Architecture Update
+**Note on Multi-User & Routing Refactor (July 2026):**
+The project underwent a massive refactoring to support multi-user isolation (via custom URLs and partitioned CSV data) and significantly upgraded the routing engine from a legacy Haversine distance heuristic to a true time-travel matrix using OSRM and Google OR-Tools. 
 
-This project has been updated to support multiple concurrent users! The application no longer relies on a single `Chapters.csv` file. Instead, the backend automatically generates unique CSV and JSON metadata files for every route job by pairing the Driver's Name with a timestamp.
-
-These dynamically generated files are pushed to the GitHub repository automatically using the GitHub API, and the frontend dynamically reads the correct map based on the `?id=` parameter in the URL. To keep the repository clean, the sync script automatically purges any generated files older than 48 hours.
-
-*See Git commit `929e752` (July 28, 2026) for the core architectural changes that transitioned this project from a single-file system to a multi-user dynamic system, and commit `3093c9b` for the addition of the QR share flow.*
+To view the exact changes where this multi-user and OR-Tools routing system was implemented, please refer to commit **`88d5c40`** (July 29, 2026) in the repository history.

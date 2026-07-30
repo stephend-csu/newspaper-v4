@@ -8,7 +8,7 @@ from datetime import timezone, timedelta
 def get_pst_timestamp():
     # Helper to get PST time string
     pst = timezone(timedelta(hours=-8))
-    return datetime.datetime.now(pst).strftime('%Y-%m-%d %I:%M:%S %p PST')
+    return datetime.datetime.now(pst).strftime('%a, %b %d %I:%M %p PST')
 
 def sync_chapters_and_metadata_to_github(csv_content_str, metadata_dict, run_id='default'):
     """

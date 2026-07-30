@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         html, body {
             height: 100%;
@@ -15,13 +15,24 @@
             padding: 0;
             background-color: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: auto;
+        }
+        /* Wrap the map in a container that allows the map to be huge */
+        #map-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2400px;
+            height: 2400px;
+            z-index: -1;
+            background: white;
         }
         #map {
-            width: 100%;
-            height: 100%;
+            width: 2400px;
+            height: 2400px;
         }
         #loading {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -37,16 +48,15 @@
             display: none;
             text-align: center;
             padding: 20px;
-            height: 100%;
+            min-height: 100%;
             box-sizing: border-box;
-            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
         #output-image {
-            max-width: 100%;
-            max-height: calc(100% - 60px);
+            max-width: 90%;
+            max-height: 80vh;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             border: 5px solid white;
             border-radius: 4px;
@@ -56,13 +66,25 @@
             font-size: 1.1rem;
             color: #4a5568;
             font-weight: 500;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .custom-number-icon {
+            background: transparent;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <div id="loading">Generating high-resolution route image...<br><small style="color:#718096; font-size: 0.85em; margin-top: 10px; display: block;">This may take a few seconds.</small></div>
-    <div id="map"></div>
-    <div id="output-container" style="display: none;">
+    <div id="loading">Generating high-resolution route image...<br><small style="color:#718096; font-size: 0.85em; margin-top: 10px; display: block;">This may take up to 10 seconds. Please wait.</small></div>
+    
+    <div id="map-wrapper">
+        <div id="map"></div>
+    </div>
+
+    <div id="output-container">
         <img id="output-image" />
         <div class="instruction"><i class="fas fa-download"></i> Right-click (or long-press) the image to save it.</div>
     </div>
@@ -76,21 +98,22 @@
         if (!runId) {
             document.getElementById('loading').innerHTML = "Error: No route ID provided in URL.";
         } else {
-            var map = L.map('map', { zoomControl: false }).setView([37.9, -122.0], 12);
+            var map = L.map('map', { 
+                zoomControl: false,
+                attributionControl: false,
+                preferCanvas: true // better for capturing
+            }).setView([37.9, -122.0], 12);
 
-            // Use useCORS on tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // Use CartoDB Positron for a clean road map
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19,
-                crossOrigin: true,
-                attribution: '© OpenStreetMap'
+                crossOrigin: true
             }).addTo(map);
 
             var timestamp = Date.now();
             var metaUrl = '/csv/metadata_' + runId + '.json?time=' + timestamp;
             var csvUrl = '/csv/Chapters_' + runId + '.csv?time=' + timestamp;
             
-            var boundsStr = [];
-
             Promise.all([
                 fetch(metaUrl).then(r => r.json()),
                 fetch(csvUrl).then(r => r.text())
@@ -101,13 +124,14 @@
                 
                 routeSegments.forEach(segment => {
                     if (segment && segment.length > 0) {
-                        L.polyline(segment, {color: 'blue', weight: 5, opacity: 0.6}).addTo(map);
+                        L.polyline(segment, {color: '#3182ce', weight: 8, opacity: 0.7}).addTo(map);
                         allCoords = allCoords.concat(segment);
                     }
                 });
 
                 if (allCoords.length > 0) {
-                    map.fitBounds(L.latLngBounds(allCoords), { padding: [50, 50] });
+                    // Give it some padding so markers don't hit the absolute edge of the 2400px canvas
+                    map.fitBounds(L.latLngBounds(allCoords), { padding: [100, 100] });
                 }
 
                 // 2. Draw markers
@@ -120,35 +144,48 @@
                                 var lat = parseFloat(row.Latitude);
                                 var lng = parseFloat(row.Longitude);
                                 
-                                var bgColor = index === 0 ? '#2a9d8f' : '#e63946'; // Green for start, Red for others
+                                var bgColor = index === 0 ? '#38a169' : '#e53e3e'; 
+                                var size = index === 0 ? 40 : 28;
+                                var fontSize = index === 0 ? 16 : 13;
+                                
                                 var icon = L.divIcon({
                                     className: 'custom-number-icon',
-                                    html: `<div style="background-color: ${bgColor}; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);">${index}</div>`,
-                                    iconSize: [24, 24],
-                                    iconAnchor: [12, 12]
+                                    html: `<div style="background-color: ${bgColor}; color: white; border-radius: 50%; width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center; font-size: ${fontSize}px; font-weight: bold; border: 3px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.5);">${index}</div>`,
+                                    iconSize: [size, size],
+                                    iconAnchor: [size/2, size/2]
                                 });
                                 
                                 L.marker([lat, lng], {icon: icon}).addTo(map);
                             }
                         });
 
-                        // 3. Wait for tiles to load, then capture
+                        // 3. Wait for tiles to load completely
                         setTimeout(() => {
-                            var mapNode = document.getElementById('map');
-                            domtoimage.toJpeg(mapNode, { quality: 0.95 })
-                                .then(function (dataUrl) {
-                                    document.getElementById('map').style.display = 'none';
-                                    document.getElementById('loading').style.display = 'none';
-                                    var container = document.getElementById('output-container');
-                                    container.style.display = 'flex';
-                                    document.getElementById('output-image').src = dataUrl;
-                                    document.title = "Route Image - " + runId;
-                                })
-                                .catch(function (error) {
-                                    console.error('oops, something went wrong!', error);
-                                    document.getElementById('loading').innerHTML = "Failed to generate image. Please check console.";
-                                });
-                        }, 2500); // Wait 2.5 seconds for tiles to fetch and render
+                            var mapNode = document.getElementById('map-wrapper');
+                            
+                            html2canvas(mapNode, {
+                                useCORS: true,
+                                allowTaint: false,
+                                scale: 1,
+                                backgroundColor: '#ffffff',
+                                width: 2400,
+                                height: 2400
+                            }).then(function(canvas) {
+                                document.getElementById('map-wrapper').style.display = 'none';
+                                document.getElementById('loading').style.display = 'none';
+                                
+                                var container = document.getElementById('output-container');
+                                container.style.display = 'flex';
+                                
+                                // Convert to JPEG
+                                var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                                document.getElementById('output-image').src = dataUrl;
+                                document.title = "Route Image - " + runId;
+                            }).catch(function(error) {
+                                console.error('Error generating image:', error);
+                                document.getElementById('loading').innerHTML = "Failed to generate image. Please check console.";
+                            });
+                        }, 4000); // 4 seconds should be enough for tiles to load on the massive canvas
                     }
                 });
             }).catch(err => {

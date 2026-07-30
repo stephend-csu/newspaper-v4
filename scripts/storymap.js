@@ -130,9 +130,36 @@ $(window).on('load', function() {
     var chapterContainerMargin = 70;
     var routeSegments = (metadata && metadata.route_segments) ? metadata.route_segments : [];
 
-    document.title = getSetting('_mapTitle');
-    $('#header').append('<h1>' + (getSetting('_mapTitle') || '') + '</h1>');
-    $('#header').append('<h2>' + (getSetting('_mapSubtitle') || '') + '</h2>');
+    var uniqueCities = new Set();
+    chapters.forEach(function(c, idx) {
+      if (idx === 0) return; // Skip depot
+      if (c['Chapter']) {
+        var parts = c['Chapter'].split(',');
+        if (parts.length >= 2) {
+          var city = parts[parts.length - 2].trim();
+          if (city) {
+            uniqueCities.add(city);
+          }
+        }
+      }
+    });
+    
+    var dynamicTitle = getSetting('_mapTitle') || '';
+    if (uniqueCities.size > 0) {
+      var citiesArray = Array.from(uniqueCities);
+      dynamicTitle = 'Newspaper delivery route in ' + citiesArray.join(', ');
+    }
+    
+    var dynamicSubtitle = getSetting('_mapSubtitle') || '';
+    var urlParamsForTitle = new URLSearchParams(window.location.search);
+    var runIdForTitle = urlParamsForTitle.get('id');
+    if (runIdForTitle) {
+      dynamicSubtitle = runIdForTitle.charAt(0).toUpperCase() + runIdForTitle.slice(1);
+    }
+
+    document.title = dynamicTitle;
+    $('#header').append('<h1>' + dynamicTitle + '</h1>');
+    $('#header').append('<h2>' + dynamicSubtitle + '</h2>');
 
     if (metadata && metadata.upload_timestamp_pst) {
       var pubTimeStr = metadata.upload_timestamp_pst;

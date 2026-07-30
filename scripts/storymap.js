@@ -8,7 +8,7 @@ $(window).on('load', function() {
     'WSJ': '#6c757d',
     'CAP': '#00bfff',
     'NYT': '#0000ff',
-    'SFC': '#ff6600',
+    'SFC': '#ffd700',
     'UST': '#00cc00',
     'WLD': '#cc00ff',
     'STD': '#ff3300'
@@ -139,10 +139,23 @@ $(window).on('load', function() {
       var waitTimeStr = pubTimeStr;
       var match = pubTimeStr.match(/(.*) (\d{1,2}):(\d{2})(?::\d{2})? (AM|PM) (PST|PDT)/);
       if (match) {
+          var datePart = match[1]; // e.g. "Wed, Jul 29"
           var hours = parseInt(match[2], 10);
           var mins = parseInt(match[3], 10);
           var ampm = match[4];
-          var tz = match[5];
+          
+          // Reformat date part if it matches "Day, Mon DD"
+          var dateMatch = datePart.match(/([a-zA-Z]+),?\s+([a-zA-Z]+)\s+(\d+)/);
+          if (dateMatch) {
+              var dayStr = dateMatch[1];
+              if (dayStr === 'Wed') dayStr = 'Weds';
+              var monthMap = {'Jan':1,'Feb':2,'Mar':3,'Apr':4,'May':5,'Jun':6,'Jul':7,'Aug':8,'Sep':9,'Oct':10,'Nov':11,'Dec':12};
+              var monthNum = monthMap[dateMatch[2]] || dateMatch[2];
+              var dayNum = parseInt(dateMatch[3], 10);
+              datePart = dayStr + ' ' + monthNum + '/' + dayNum;
+          }
+          
+          pubTimeStr = datePart + ' at ' + hours + ':' + (mins < 10 ? '0'+mins : mins) + ' ' + ampm;
           
           mins += 5;
           if (mins >= 60) {
@@ -155,8 +168,7 @@ $(window).on('load', function() {
               }
           }
           var minStr = mins < 10 ? '0' + mins : mins;
-          var hrStr = hours < 10 ? '0' + hours : hours;
-          waitTimeStr = hrStr + ':' + minStr + ' ' + ampm + ' ' + tz;
+          waitTimeStr = hours + ':' + minStr + ' ' + ampm;
       }
       var msg = 'Published at ' + pubTimeStr + '. Please wait until ' + waitTimeStr + ' for GitHub to update the map data.';
       $('#header').append('<div class="upload-pst-header" style="font-size:0.85em; color:#d9534f; line-height:1.3; padding: 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
@@ -235,33 +247,32 @@ $(window).on('load', function() {
     var notFoundCount = metadata ? metadata.addresses_not_found : 0;
     var notRoutedList = (metadata && metadata.not_routed_addresses) ? metadata.not_routed_addresses : [];
 
-    var statsCard = $('<div class="special-card-container"></div>');
-    statsCard.append('<div class="card-title"><i class="fa fa-list-check"></i> Address Resolution Summary</div>');
-    statsCard.append(`
-      <div class="stats-grid">
-        <div class="stat-box found">
-          <div class="stat-val">${foundCount}</div>
-          <div class="stat-lbl">Addresses Found</div>
-        </div>
-        <div class="stat-box not-found">
-          <div class="stat-val">${notFoundCount}</div>
-          <div class="stat-lbl">Not Routed / Included</div>
-        </div>
-      </div>
-    `);
+    var paperCounts = {};
+    chapters.forEach(function(c) {
+      if (c['Newspapers']) {
+        c['Newspapers'].split(/\s+/).forEach(function(p) {
+          var paper = p.trim().toUpperCase();
+          if (paper) {
+            paperCounts[paper] = (paperCounts[paper] || 0) + 1;
+          }
+        });
+      }
+    });
+    
+    var sortedPapers = Object.keys(paperCounts).sort(function(a, b) {
+      return paperCounts[b] - paperCounts[a];
+    });
 
-    if (notRoutedList && notRoutedList.length > 0) {
-      var notRoutedHtml = '<div class="not-routed-container">';
-      notRoutedHtml += '<div class="not-routed-title"><i class="fa fa-exclamation-triangle"></i> Not Routed Addresses (' + notRoutedList.length + '):</div>';
-      notRoutedHtml += '<ul class="not-routed-list">';
-      notRoutedList.forEach(function(addr) {
-        notRoutedHtml += '<li>' + addr + '</li>';
-      });
-      notRoutedHtml += '</ul></div>';
-      statsCard.append(notRoutedHtml);
-    } else {
-      statsCard.append('<div class="not-routed-container"><div class="not-routed-title" style="color:#38a169;"><i class="fa fa-check-circle"></i> All extracted addresses successfully routed!</div></div>');
-    }
+    var statsCard = $('<div class="special-card-container" style="text-align: center; font-weight: bold; font-size: 1.1em; padding: 15px;"></div>');
+    var foundCount = metadata ? metadata.addresses_found : chapters.length;
+    statsCard.append('<div style="margin-bottom: 10px;">Route for ' + foundCount + ' addresses</div>');
+    
+    var countsHtml = '<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">';
+    sortedPapers.forEach(function(p) {
+      countsHtml += '<span class="np-badge np-badge-' + p.toLowerCase() + '" style="font-size: 0.9em; padding: 4px 8px;">' + p + ': ' + paperCounts[p] + '</span>';
+    });
+    countsHtml += '</div>';
+    statsCard.append(countsHtml);
 
     statsContainer.append(statsCard);
     $('#contents').append(statsContainer);

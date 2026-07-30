@@ -28,8 +28,8 @@
             background: white;
         }
         #map {
-            width: 2400px;
-            height: 2400px;
+            width: 100%;
+            height: 100%;
         }
         #loading {
             position: fixed;
@@ -78,7 +78,7 @@
     </style>
 </head>
 <body>
-    <div id="loading">Generating high-resolution route image...<br><small style="color:#718096; font-size: 0.85em; margin-top: 10px; display: block;">This may take up to 10 seconds. Please wait.</small></div>
+    <div id="loading">Generating high-resolution route image...<br><small style="color:#718096; font-size: 0.85em; margin-top: 10px; display: block;">This may take up to 15 seconds for a large route. Please wait.</small></div>
     
     <div id="map-wrapper">
         <div id="map"></div>
@@ -98,18 +98,6 @@
         if (!runId) {
             document.getElementById('loading').innerHTML = "Error: No route ID provided in URL.";
         } else {
-            var map = L.map('map', { 
-                zoomControl: false,
-                attributionControl: false,
-                preferCanvas: true // better for capturing
-            }).setView([37.9, -122.0], 12);
-
-            // Use CartoDB Positron for a clean road map
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                crossOrigin: true
-            }).addTo(map);
-
             var timestamp = Date.now();
             var metaUrl = '/csv/metadata_' + runId + '.json?time=' + timestamp;
             var csvUrl = '/csv/Chapters_' + runId + '.csv?time=' + timestamp;
@@ -118,35 +106,85 @@
                 fetch(metaUrl).then(r => r.json()),
                 fetch(csvUrl).then(r => r.text())
             ]).then(([metadata, csvText]) => {
-                // 1. Draw route line
                 var routeSegments = metadata.route_segments || [];
                 var allCoords = [];
                 
-                routeSegments.forEach(segment => {
-                    if (segment && segment.length > 0) {
-                        L.polyline(segment, {color: '#3182ce', weight: 8, opacity: 0.7}).addTo(map);
+                // 1. Gather coordinates excluding the first segment (depot to first address)
+                routeSegments.forEach((segment, idx) => {
+                    if (idx > 0 && segment && segment.length > 0) {
                         allCoords = allCoords.concat(segment);
                     }
                 });
 
-                if (allCoords.length > 0) {
-                    // Give it some padding so markers don't hit the absolute edge of the 2400px canvas
-                    map.fitBounds(L.latLngBounds(allCoords), { padding: [100, 100] });
+                if (allCoords.length === 0) {
+                    document.getElementById('loading').innerHTML = "Error: No valid route coordinates found.";
+                    return;
                 }
 
-                // 2. Draw markers
+                var bounds = L.latLngBounds(allCoords);
+                var targetZoom = 16;
+                
+                // Temporarily create a map object just to calculate pixel dimensions at zoom 16
+                var dummyMap = L.map(document.createElement('div')).setView([0,0], targetZoom);
+                var nw = dummyMap.project(bounds.getNorthWest(), targetZoom);
+                var se = dummyMap.project(bounds.getSouthEast(), targetZoom);
+                
+                // Add pixel padding so nothing touches the edges
+                var paddingPx = 300; 
+                var mapWidth = Math.abs(se.x - nw.x) + (paddingPx * 2);
+                var mapHeight = Math.abs(se.y - nw.y) + (paddingPx * 2);
+                
+                // Cap canvas dimension to prevent browser crash (most browsers cap at 16384 or 32767)
+                var maxDimension = 15000; 
+                if (mapWidth > maxDimension) {
+                    var scale = maxDimension / mapWidth;
+                    mapWidth = maxDimension;
+                    mapHeight = mapHeight * scale;
+                }
+                if (mapHeight > maxDimension) {
+                    var scale = maxDimension / mapHeight;
+                    mapHeight = maxDimension;
+                    mapWidth = mapWidth * scale;
+                }
+                
+                document.getElementById('map-wrapper').style.width = Math.round(mapWidth) + 'px';
+                document.getElementById('map-wrapper').style.height = Math.round(mapHeight) + 'px';
+
+                // Now initialize the real map
+                var map = L.map('map', { 
+                    zoomControl: false,
+                    attributionControl: false,
+                    preferCanvas: true // better for capturing
+                });
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    crossOrigin: true
+                }).addTo(map);
+                
+                // Set bounds exactly, forcing the scale we calculated
+                map.fitBounds(bounds, { padding: [paddingPx, paddingPx] });
+
+                // Draw route line excluding depot segment
+                routeSegments.forEach((segment, idx) => {
+                    if (idx > 0 && segment && segment.length > 0) {
+                        L.polyline(segment, {color: '#3182ce', weight: 8, opacity: 0.7}).addTo(map);
+                    }
+                });
+
+                // Draw markers excluding depot
                 Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
                     complete: function(results) {
                         results.data.forEach((row, index) => {
-                            if (row.Latitude && row.Longitude) {
+                            if (index > 0 && row.Latitude && row.Longitude) {
                                 var lat = parseFloat(row.Latitude);
                                 var lng = parseFloat(row.Longitude);
                                 
-                                var bgColor = index === 0 ? '#38a169' : '#e53e3e'; 
-                                var size = index === 0 ? 40 : 28;
-                                var fontSize = index === 0 ? 16 : 13;
+                                var size = 30;
+                                var fontSize = 14;
+                                var bgColor = '#e53e3e';
                                 
                                 var icon = L.divIcon({
                                     className: 'custom-number-icon',
@@ -159,17 +197,16 @@
                             }
                         });
 
-                        // 3. Wait for tiles to load completely
+                        // Wait for all tiles on the massive canvas to load
                         setTimeout(() => {
                             var mapNode = document.getElementById('map-wrapper');
-                            
                             html2canvas(mapNode, {
                                 useCORS: true,
                                 allowTaint: false,
                                 scale: 1,
                                 backgroundColor: '#ffffff',
-                                width: 2400,
-                                height: 2400
+                                width: Math.round(mapWidth),
+                                height: Math.round(mapHeight)
                             }).then(function(canvas) {
                                 document.getElementById('map-wrapper').style.display = 'none';
                                 document.getElementById('loading').style.display = 'none';
@@ -177,7 +214,6 @@
                                 var container = document.getElementById('output-container');
                                 container.style.display = 'flex';
                                 
-                                // Convert to JPEG
                                 var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
                                 document.getElementById('output-image').src = dataUrl;
                                 document.title = "Route Image - " + runId;
@@ -185,7 +221,7 @@
                                 console.error('Error generating image:', error);
                                 document.getElementById('loading').innerHTML = "Failed to generate image. Please check console.";
                             });
-                        }, 4000); // 4 seconds should be enough for tiles to load on the massive canvas
+                        }, 5000); // 5 seconds wait for big map tiles
                     }
                 });
             }).catch(err => {

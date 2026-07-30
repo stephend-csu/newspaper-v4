@@ -202,6 +202,10 @@ $(window).on('load', function() {
     } else {
       $('#header').append('<div class="upload-pst-header"><i class="fa fa-clock"></i> Uploaded: Recent (PST)</div>');
     }
+    
+    if (runIdForTitle) {
+      $('#header-action-container').html('<a href="route_image.html?id=' + encodeURIComponent(runIdForTitle) + '" target="_blank" style="font-size:0.85rem; font-weight:bold; color:#3182ce; text-decoration:none;"><i class="fas fa-image"></i> View Route Image</a>');
+    }
 
     if (getSetting('_mapLogo')) {
       $('#logo').append('<img src="' + getSetting('_mapLogo') + '" />');

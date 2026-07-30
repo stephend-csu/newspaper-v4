@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generating Route Image...</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        #output-container {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #output-image {
+            max-width: 100%;
+            max-height: calc(100% - 60px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border: 5px solid white;
+            border-radius: 4px;
+        }
+        .instruction {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #4a5568;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Generating high-resolution route image...<br><small style="color:#718096; font-size: 0.85em; margin-top: 10px; display: block;">This may take a few seconds.</small></div>
+    <div id="map"></div>
+    <div id="output-container" style="display: none;">
+        <img id="output-image" />
+        <div class="instruction"><i class="fas fa-download"></i> Right-click (or long-press) the image to save it.</div>
+    </div>
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+
+    <script>
+        var urlParams = new URLSearchParams(window.location.search);
+        var runId = urlParams.get('id');
+        
+        if (!runId) {
+            document.getElementById('loading').innerHTML = "Error: No route ID provided in URL.";
+        } else {
+            var map = L.map('map', { zoomControl: false }).setView([37.9, -122.0], 12);
+
+            // Use useCORS on tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                crossOrigin: true,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            var timestamp = Date.now();
+            var metaUrl = '/csv/metadata_' + runId + '.json?time=' + timestamp;
+            var csvUrl = '/csv/Chapters_' + runId + '.csv?time=' + timestamp;
+            
+            var boundsStr = [];
+
+            Promise.all([
+                fetch(metaUrl).then(r => r.json()),
+                fetch(csvUrl).then(r => r.text())
+            ]).then(([metadata, csvText]) => {
+                // 1. Draw route line
+                var routeSegments = metadata.route_segments || [];
+                var allCoords = [];
+                
+                routeSegments.forEach(segment => {
+                    if (segment && segment.length > 0) {
+                        L.polyline(segment, {color: 'blue', weight: 5, opacity: 0.6}).addTo(map);
+                        allCoords = allCoords.concat(segment);
+                    }
+                });
+
+                if (allCoords.length > 0) {
+                    map.fitBounds(L.latLngBounds(allCoords), { padding: [50, 50] });
+                }
+
+                // 2. Draw markers
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        results.data.forEach((row, index) => {
+                            if (row.Latitude && row.Longitude) {
+                                var lat = parseFloat(row.Latitude);
+                                var lng = parseFloat(row.Longitude);
+                                
+                                var bgColor = index === 0 ? '#2a9d8f' : '#e63946'; // Green for start, Red for others
+                                var icon = L.divIcon({
+                                    className: 'custom-number-icon',
+                                    html: `<div style="background-color: ${bgColor}; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);">${index}</div>`,
+                                    iconSize: [24, 24],
+                                    iconAnchor: [12, 12]
+                                });
+                                
+                                L.marker([lat, lng], {icon: icon}).addTo(map);
+                            }
+                        });
+
+                        // 3. Wait for tiles to load, then capture
+                        setTimeout(() => {
+                            var mapNode = document.getElementById('map');
+                            domtoimage.toJpeg(mapNode, { quality: 0.95 })
+                                .then(function (dataUrl) {
+                                    document.getElementById('map').style.display = 'none';
+                                    document.getElementById('loading').style.display = 'none';
+                                    var container = document.getElementById('output-container');
+                                    container.style.display = 'flex';
+                                    document.getElementById('output-image').src = dataUrl;
+                                    document.title = "Route Image - " + runId;
+                                })
+                                .catch(function (error) {
+                                    console.error('oops, something went wrong!', error);
+                                    document.getElementById('loading').innerHTML = "Failed to generate image. Please check console.";
+                                });
+                        }, 2500); // Wait 2.5 seconds for tiles to fetch and render
+                    }
+                });
+            }).catch(err => {
+                document.getElementById('loading').innerHTML = "Error loading route files. Ensure route exists.";
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>

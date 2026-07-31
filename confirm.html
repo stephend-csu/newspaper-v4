@@ -125,6 +125,21 @@
       </div>
     </header>
 
+    <!-- Top Action Buttons -->
+    <div style="margin-bottom: 20px;">
+      <button type="button" class="btn btn-primary" id="btnConfirmRoute" onclick="submitConfirmedRoute()" style="width: 100%; margin-top: 0; margin-bottom: 16px; padding: 14px; font-size: 1.1rem; background: #66bb6a; color: #121212; font-weight: 600;">
+        Confirm & Generate Route (Upload to GitHub)
+      </button>
+
+      <div style="background: #1e1e1e; border: 1px solid #333333; border-radius: 4px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+        <h3 style="margin-bottom: 12px; color: #eeeeee; font-size: 1rem;">Add Custom Address</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="customAddressInput" class="input-edit" placeholder="e.g. 123 Main St, Walnut Creek, CA" style="flex: 2; min-width: 250px;">
+          <button type="button" class="btn btn-valid" onclick="addCustomAddress()">Add to Valid List</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Newspaper Totals Card -->
     <div class="summary-card">
       <div class="summary-title">Total Newspaper Count (Valid & Problem Addresses)</div>
@@ -197,20 +212,6 @@
         <div style="color:#a0aec0; padding: 10px;">No valid addresses loaded.</div>
       </div>
     </div>
-
-    <div style="background: #1e1e1e; border: 1px solid #333333; border-radius: 4px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
-      <h3 style="margin-bottom: 12px; color: #eeeeee; font-size: 1rem;">Add Custom Address</h3>
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-        <input type="text" id="customAddressInput" class="input-edit" placeholder="e.g. 123 Main St, Walnut Creek, CA" style="flex: 2; min-width: 250px;">
-        <input type="text" id="customPapersInput" class="input-edit" placeholder="Papers (comma separated, e.g. NYT, WSJ)" style="flex: 1; min-width: 200px;">
-        <button type="button" class="btn btn-valid" onclick="addCustomAddress()">Add to Valid List</button>
-      </div>
-    </div>
-
-    <button type="button" class="btn btn-primary" id="btnConfirmRoute" onclick="submitConfirmedRoute()">
-      Confirm & Generate Route (Upload to GitHub)
-    </button>
-  </div>
 
   <!-- Progress Modal -->
   <div class="modal-overlay" id="progressModal">
@@ -651,14 +652,8 @@
 
     window.addCustomAddress = function() {
       var addr = document.getElementById('customAddressInput').value.trim();
-      var papers = document.getElementById('customPapersInput').value.trim();
       if (!addr) {
         alert("Please enter an address.");
-        return;
-      }
-      var paperList = papers.split(',').map(p => p.trim()).filter(p => p.length > 0);
-      if (paperList.length === 0) {
-        alert("Please specify at least one newspaper (e.g. NYT, WSJ).");
         return;
       }
       
@@ -666,12 +661,11 @@
         raw: addr,
         city: "Custom",
         full_address: addr,
-        newspapers: paperList
+        newspapers: ["Custom"]
       };
       
       routeData.valid_addresses.unshift(newItem); // Add to top of list
       document.getElementById('customAddressInput').value = '';
-      document.getElementById('customPapersInput').value = '';
       saveState();
       renderAll();
     };

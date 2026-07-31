@@ -200,7 +200,7 @@ $(window).on('load', function() {
     }
     
     if (runIdForTitle) {
-      $('#header-action-container').html('<a href="route_image.html?id=' + encodeURIComponent(runIdForTitle) + '" target="_blank" style="font-size:0.85rem; font-weight:bold; color:#3182ce; text-decoration:none;"><i class="fas fa-image"></i> View Route Image</a>');
+      $('#header-action-container').html('<a href="route_image.html?id=' + encodeURIComponent(runIdForTitle) + '" target="_blank" style="font-size:0.85rem; font-weight:bold; color:#3182ce; text-decoration:none;"><i class="fas fa-map"></i> Explore route in new tab</a>');
     }
 
     if (getSetting('_mapLogo')) {
@@ -240,7 +240,7 @@ $(window).on('load', function() {
     });
 
     var pickerCard = $('<div class="special-card-container"></div>');
-    pickerCard.append('<div class="card-title"><i class="fa fa-palette"></i> Newspaper Color Options</div>');
+    pickerCard.append('<div class="card-title"><i class="fa fa-palette"></i> Newspaper Color</div>');
     var pickerGrid = $('<div class="color-picker-grid"></div>');
 
     Array.from(detectedNewspapers).forEach(paper => {
@@ -505,11 +505,15 @@ $(window).on('load', function() {
         if (markers[i] && markers[i]._icon) {
           // Reset all marker classes to base extra-marker class logic
           markers[i]._icon.className = markers[i]._icon.className.replace(/extra-marker-circle-\w+(-(?:dark|light))?/g, '');
+          markers[i]._icon.style.filter = 'none'; // reset filter
           
           var targetColor = 'cyan';
           if (i === 0) targetColor = 'green'; // Start location
           else if (i === k) targetColor = 'orange'; // Current location
-          else if (i > 0 && i < k) targetColor = 'black'; // Previous locations
+          else if (i === k - 1 && i > 0) {
+            targetColor = 'cyan'; // Base color for previous
+            markers[i]._icon.style.filter = 'grayscale(100%) opacity(0.6)'; // Make it actually gray
+          }
           
           markers[i]._icon.className += ' extra-marker-circle-' + targetColor;
           

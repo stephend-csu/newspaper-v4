@@ -200,8 +200,8 @@ def api_process_route():
         
     driver_name = data.get('driver_name', 'Unknown')
     
-    if driver_name.lower() == 'test':
-        run_id = 'test'
+    if driver_name.lower() == 'admin':
+        run_id = 'admin'
     else:
         # Sanitize driver name for filenames (alphanumeric and dashes only)
         import re

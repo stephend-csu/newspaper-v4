@@ -149,17 +149,13 @@ $(window).on('load', function() {
       var citiesArray = Array.from(uniqueCities);
       dynamicTitle = 'Newspaper delivery route in ' + citiesArray.join(', ');
     }
-    
     var dynamicSubtitle = getSetting('_mapSubtitle') || '';
     var urlParamsForTitle = new URLSearchParams(window.location.search);
     var runIdForTitle = urlParamsForTitle.get('id');
     if (runIdForTitle) {
       dynamicSubtitle = runIdForTitle.charAt(0).toUpperCase() + runIdForTitle.slice(1);
     }
-
-    document.title = dynamicTitle;
-    $('#header').append('<h1>' + dynamicTitle + '</h1>');
-    $('#header').append('<h2>' + dynamicSubtitle + '</h2>');
+    document.title = "Newspaper Delivery Route";
 
     if (metadata && metadata.upload_timestamp_pst) {
       var pubTimeStr = metadata.upload_timestamp_pst;
@@ -330,7 +326,7 @@ $(window).on('load', function() {
           icon: L.ExtraMarkers.icon({
             icon: 'fa-number',
             number: c['Marker'] === 'Numbered' ? chapterCount : (c['Marker'] === 'Plain' ? '' : c['Marker']),
-            markerColor: c['Marker Color'] || 'blue'
+            markerColor: idx === 0 ? 'green' : 'cyan'
           }),
           opacity: c['Marker'] === 'Hidden' ? 0 : 0.9,
           interactive: c['Marker'] === 'Hidden' ? false : true,
@@ -390,7 +386,7 @@ $(window).on('load', function() {
       var nextBtnHtml = `
       <div style="display: flex; justify-content: center; align-items: center; margin-top: 6px;">
         <div style="width: 50px; display: flex; justify-content: flex-end; margin-right: 15px;">
-          <i class="fas fa-flag delivery-flag" data-state="0" style="font-size: 1.8rem; color: #cbd5e0; cursor: pointer; padding: 12px; touch-action: manipulation; -webkit-tap-highlight-color: transparent;" onclick="toggleDeliveryFlag(this)" title="Toggle delivery status"></i>
+          <i class="fa fa-flag delivery-flag" data-state="0" style="font-size: 1.8rem; color: #cbd5e0; cursor: pointer; padding: 12px; touch-action: manipulation; -webkit-tap-highlight-color: transparent;" onclick="toggleDeliveryFlag(this)" title="Toggle delivery status"></i>
         </div>
         <button type="button" class="btn-next-address" style="margin-top: 0;" data-target-idx="${containerIdx + 1}" onclick="handleNextAddressClick(this, ${containerIdx + 1})" title="Advance to next address"><span class="cute-triangle">▾</span></button>
         <div style="width: 50px; margin-left: 15px;"></div>
@@ -507,9 +503,19 @@ $(window).on('load', function() {
     function markActiveColor(k) {
       for (var i = 0; i < markers.length; i++) {
         if (markers[i] && markers[i]._icon) {
+          // Reset all marker classes to base extra-marker class logic
+          markers[i]._icon.className = markers[i]._icon.className.replace(/extra-marker-circle-\w+(-(?:dark|light))?/g, '');
+          
+          var targetColor = 'cyan';
+          if (i === 0) targetColor = 'green'; // Start location
+          else if (i === k) targetColor = 'orange'; // Current location
+          else if (i > 0 && i < k) targetColor = 'black'; // Previous locations
+          
+          markers[i]._icon.className += ' extra-marker-circle-' + targetColor;
+          
           markers[i]._icon.className = markers[i]._icon.className.replace(' marker-active', '');
           if (i == k) {
-            markers[k]._icon.className += ' marker-active';
+            markers[i]._icon.className += ' marker-active';
           }
         }
       }

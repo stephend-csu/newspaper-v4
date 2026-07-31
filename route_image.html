@@ -122,20 +122,20 @@
                 }
 
                 var bounds = L.latLngBounds(allCoords);
-                var targetZoom = 16;
+                var targetZoom = 18; // Forced to Zoom 18
                 
-                // Temporarily create a map object just to calculate pixel dimensions at zoom 16
+                // Temporarily create a map object just to calculate pixel dimensions at zoom 18
                 var dummyMap = L.map(document.createElement('div')).setView([0,0], targetZoom);
                 var nw = dummyMap.project(bounds.getNorthWest(), targetZoom);
                 var se = dummyMap.project(bounds.getSouthEast(), targetZoom);
                 
                 // Add pixel padding so nothing touches the edges
-                var paddingPx = 300; 
+                var paddingPx = 400; 
                 var mapWidth = Math.abs(se.x - nw.x) + (paddingPx * 2);
                 var mapHeight = Math.abs(se.y - nw.y) + (paddingPx * 2);
                 
-                // Cap canvas dimension to prevent browser crash (most browsers cap at 16384 or 32767)
-                var maxDimension = 15000; 
+                // Cap canvas dimension at 28,000 to prevent crashing, but allow massive Zoom 18 maps
+                var maxDimension = 28000; 
                 if (mapWidth > maxDimension) {
                     var scale = maxDimension / mapWidth;
                     mapWidth = maxDimension;
@@ -150,11 +150,10 @@
                 document.getElementById('map-wrapper').style.width = Math.round(mapWidth) + 'px';
                 document.getElementById('map-wrapper').style.height = Math.round(mapHeight) + 'px';
 
-                // Now initialize the real map
+                // Now initialize the real map (No preferCanvas so SVGs render correctly at huge scales)
                 var map = L.map('map', { 
                     zoomControl: false,
-                    attributionControl: false,
-                    preferCanvas: true // better for capturing
+                    attributionControl: false
                 });
 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -208,15 +207,10 @@
                                 width: Math.round(mapWidth),
                                 height: Math.round(mapHeight)
                             }).then(function(canvas) {
-                                document.getElementById('map-wrapper').style.display = 'none';
-                                document.getElementById('loading').style.display = 'none';
-                                
-                                var container = document.getElementById('output-container');
-                                container.style.display = 'flex';
-                                
-                                var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-                                document.getElementById('output-image').src = dataUrl;
-                                document.title = "Route Image - " + runId;
+                                canvas.toBlob(function(blob) {
+                                    var blobUrl = URL.createObjectURL(blob);
+                                    window.location.replace(blobUrl);
+                                }, "image/jpeg", 0.85);
                             }).catch(function(error) {
                                 console.error('Error generating image:', error);
                                 document.getElementById('loading').innerHTML = "Failed to generate image. Please check console.";

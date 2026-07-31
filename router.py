@@ -19,15 +19,6 @@ START_ADDRESS = {
     'lon': -122.0306097
 }
 
-MANDATORY_ADDRESS = {
-    'raw_address': '923 Pacific Ct',
-    'full_address': '923 Pacific Ct, Walnut Creek, CA',
-    'city': 'Walnut Creek',
-    'newspapers': ['EBT'],
-    'lat': None,
-    'lon': None
-}
-
 def ensure_single_address_coords(address_obj):
     """
     Geocodes an address live using ArcGIS. No pre-cache dictionary or disk lookup used.
@@ -160,13 +151,7 @@ def optimize_road_route(confirmed_addresses):
     addr_dict[start_item['full_address'].lower()] = start_item
     
     # 2. Add mandatory address
-    mandatory_item = dict(MANDATORY_ADDRESS)
-    for item in confirmed_addresses:
-        full_lower = item.get('full_address', '').lower()
-        if '923 pacific' in full_lower:
-            mandatory_item['newspapers'] = sorted(list(set(mandatory_item['newspapers'] + item.get('newspapers', []))))
-            break
-    addr_dict[mandatory_item['full_address'].lower()] = mandatory_item
+    # Skip legacy logic
     
     # 3. Add all user confirmed addresses
     for item in confirmed_addresses:

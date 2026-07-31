@@ -96,14 +96,7 @@ def parse_pdf_text(text: str):
     return address_papers
 
 def format_parsed_addresses(parsed):
-    # Always include mandatory address: 923 Pacific Ct, Walnut Creek, CA
-    found_mandatory = False
-    for k in parsed:
-        if "923 pacific" in k.lower():
-            found_mandatory = True
-            break
-    if not found_mandatory:
-        parsed["923 Pacific Ct"] = {"EBT"}
+    # Mandatory address removed
         
     items = []
     for raw_addr, papers in parsed.items():

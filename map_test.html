@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Route Visualization Test</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        .leaflet-div-icon {
+            background: #e63946;
+            border: 1px solid white;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 50%;
+            line-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+    <link rel="stylesheet" href="markers/leaflet.extra-markers.min.css">
+    <script src="markers/leaflet.extra-markers.min.js"></script>
+
+    <script>
+        var map = L.map('map').setView([37.9, -122.0], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        var timestamp = Date.now();
+        
+        // Fetch route metadata
+        fetch('/csv/metadata_test.json?time=' + timestamp)
+            .then(response => response.json())
+            .then(metadata => {
+                var routeSegments = metadata.route_segments;
+                var allCoords = [];
+                
+                routeSegments.forEach(segment => {
+                    if (segment && segment.length > 0) {
+                        L.polyline(segment, {color: 'blue', weight: 5, opacity: 0.6}).addTo(map);
+                        allCoords = allCoords.concat(segment);
+                    }
+                });
+
+                if (allCoords.length > 0) {
+                    map.fitBounds(L.latLngBounds(allCoords));
+                }
+            })
+            .catch(err => console.error("Error loading metadata_test.json:", err));
+
+        // Fetch markers from Chapters_test.csv
+        fetch('/csv/Chapters_test.csv?time=' + timestamp)
+            .then(response => response.text())
+            .then(csvText => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        results.data.forEach((row, index) => {
+                            if (row.Latitude && row.Longitude) {
+                                var lat = parseFloat(row.Latitude);
+                                var lng = parseFloat(row.Longitude);
+                                
+                                var bgColor = index === 0 ? '#2a9d8f' : '#e63946'; // Green for start, Red for others
+                                var icon = L.divIcon({
+                                    className: 'custom-number-icon',
+                                    html: `<div style="background-color: ${bgColor}; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);">${index}</div>`,
+                                    iconSize: [24, 24],
+                                    iconAnchor: [12, 12],
+                                    popupAnchor: [0, -12]
+                                });
+                                
+                                L.marker([lat, lng], {icon: icon})
+                                    .bindPopup(`<b>Stop ${index}:</b><br>${row.Chapter}`)
+                                    .addTo(map);
+                            }
+                        });
+                    }
+                });
+            })
+            .catch(err => console.error("Error loading Chapters_test.csv:", err));
+    </script>
+</body>
+</html>

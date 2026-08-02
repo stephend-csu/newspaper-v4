@@ -157,6 +157,52 @@ $(window).on('load', function() {
     }
     document.title = "Newspaper Delivery Route";
     
+    if (runIdForTitle && runIdForTitle.toLowerCase() === 'admin') {
+      var noteStr = '<br><span style="font-size:0.88em; opacity:0.9;">Note: GitHub\'s CDN cache expires in 5 minutes, and browser cache is disabled.</span>';
+      if (metadata && metadata.upload_timestamp_pst) {
+        var pubTimeStr = metadata.upload_timestamp_pst;
+        var waitTimeStr = pubTimeStr;
+        var match = pubTimeStr.match(/(.*) (\d{1,2}):(\d{2})(?::\d{2})? (AM|PM) (PST|PDT)/);
+        if (match) {
+            var datePart = match[1]; // e.g. "Sun, Aug 02"
+            var hours = parseInt(match[2], 10);
+            var mins = parseInt(match[3], 10);
+            var ampm = match[4];
+            
+            // Reformat date part if it matches "Day, Mon DD"
+            var dateMatch = datePart.match(/([a-zA-Z]+),?\s+([a-zA-Z]+)\s+(\d+)/);
+            if (dateMatch) {
+                var dayStr = dateMatch[1];
+                if (dayStr === 'Wed') dayStr = 'Weds';
+                var monthMap = {'Jan':1,'Feb':2,'Mar':3,'Apr':4,'May':5,'Jun':6,'Jul':7,'Aug':8,'Sep':9,'Oct':10,'Nov':11,'Dec':12};
+                var monthNum = monthMap[dateMatch[2]] || dateMatch[2];
+                var dayNum = parseInt(dateMatch[3], 10);
+                datePart = dayStr + ' ' + monthNum + '/' + dayNum;
+            }
+            
+            pubTimeStr = datePart + ' at ' + hours + ':' + (mins < 10 ? '0'+mins : mins) + ' ' + ampm;
+            
+            mins += 5;
+            if (mins >= 60) {
+                mins -= 60;
+                hours += 1;
+                if (hours == 12) {
+                    ampm = (ampm === 'AM') ? 'PM' : 'AM';
+                } else if (hours > 12) {
+                    hours -= 12;
+                }
+            }
+            var minStr = mins < 10 ? '0' + mins : mins;
+            waitTimeStr = hours + ':' + minStr + ' ' + ampm;
+        }
+        var msg = 'Published at ' + pubTimeStr + '. Please wait until ' + waitTimeStr + ' for GitHub to update the map data.' + noteStr;
+        $('#header').append('<div class="upload-pst-header" style="font-size:0.85em; color:#d9534f; line-height:1.4; padding: 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
+      } else {
+        var msg = 'Please wait up to 5 minutes for GitHub to update the map data.' + noteStr;
+        $('#header').append('<div class="upload-pst-header" style="font-size:0.85em; color:#d9534f; line-height:1.4; padding: 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
+      }
+    }
+    
     if (runIdForTitle) {
       $('#header-action-container').html('<a href="route_image.html?id=' + encodeURIComponent(runIdForTitle) + '" target="_blank" style="font-size:0.85rem; font-weight:bold; color:#3182ce; text-decoration:none;"><i class="fas fa-map"></i> Explore route in new tab</a>');
     }

@@ -146,7 +146,8 @@ def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, new
         JOB_STATUSES[job_id] = {'status': 'processing', 'message': 'Optimizing road route...'}
         
         # 1. Optimize route using OSRM
-        route_waypoints, route_segments = optimize_road_route(confirmed_addresses)
+        is_admin = (str(run_id).lower() == 'admin')
+        route_waypoints, route_segments = optimize_road_route(confirmed_addresses, is_admin=is_admin)
         
         JOB_STATUSES[job_id]['message'] = 'Generating Chapters.csv...'
         

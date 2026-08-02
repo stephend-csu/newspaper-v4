@@ -10,13 +10,22 @@ from geocoder import geocode_address_candidate
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 
-START_ADDRESS = {
+DEFAULT_START_ADDRESS = {
     'raw_address': '2505 Dean Lesher Dr',
     'full_address': '2505 Dean Lesher Dr, Concord, CA',
     'city': 'Concord',
     'newspapers': [],
     'lat': 38.0205834,
     'lon': -122.0306097
+}
+
+ADMIN_START_ADDRESS = {
+    'raw_address': '923 Pacific Ct',
+    'full_address': '923 Pacific Ct, Walnut Creek, CA',
+    'city': 'Walnut Creek',
+    'newspapers': [],
+    'lat': 37.9102823,
+    'lon': -122.0232387
 }
 
 def ensure_single_address_coords(address_obj):
@@ -143,11 +152,11 @@ def solve_tsp_ortools(address_list, time_matrix):
     else:
         return address_list
 
-def optimize_road_route(confirmed_addresses):
+def optimize_road_route(confirmed_addresses, is_admin=False):
     addr_dict = {}
     
     # 1. Start address is ALWAYS first
-    start_item = dict(START_ADDRESS)
+    start_item = dict(ADMIN_START_ADDRESS if is_admin else DEFAULT_START_ADDRESS)
     addr_dict[start_item['full_address'].lower()] = start_item
     
     # 2. Add mandatory address
@@ -165,9 +174,10 @@ def optimize_road_route(confirmed_addresses):
     address_list = list(addr_dict.values())
     
     # Ensure starting address is index 0
+    start_key = '923 pacific' if is_admin else '2505 dean lesher'
     start_index = 0
     for idx, item in enumerate(address_list):
-        if '2505 dean lesher' in item['full_address'].lower():
+        if start_key in item['full_address'].lower():
             start_index = idx
             break
     if start_index != 0:

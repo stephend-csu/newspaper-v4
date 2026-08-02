@@ -243,12 +243,29 @@ $(window).on('load', function() {
       class: 'chapter-container in-focus'
     });
 
+    function isColorTooWhite(hex) {
+      if (!hex) return true;
+      hex = hex.replace('#', '').trim();
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      if (hex.length !== 6) return false;
+      var r = parseInt(hex.substring(0, 2), 16) || 0;
+      var g = parseInt(hex.substring(2, 4), 16) || 0;
+      var b = parseInt(hex.substring(4, 6), 16) || 0;
+      return r > 235 && g > 235 && b > 235;
+    }
+
     var pickerCard = $('<div class="special-card-container"></div>');
     pickerCard.append('<div class="card-title"><i class="fa fa-palette"></i> Newspaper Color</div>');
     var pickerGrid = $('<div class="color-picker-grid"></div>');
 
+    var fallbackPalette = ['#e53e3e', '#3182ce', '#38a169', '#d69e2e', '#805ad5', '#dd6b20', '#319795'];
+    var fallbackIdx = 0;
     Array.from(detectedNewspapers).forEach(paper => {
-      var color = newspaperColors[paper] || '#4a5568';
+      var color = newspaperColors[paper];
+      if (!color || isColorTooWhite(color)) {
+        color = fallbackPalette[fallbackIdx % fallbackPalette.length];
+        fallbackIdx++;
+      }
       newspaperColors[paper] = color;
       
       var item = $('<div class="picker-item"></div>');
@@ -256,6 +273,10 @@ $(window).on('load', function() {
       var input = $(`<input type="color" id="picker_${paper}" value="${color}">`);
       input.on('input change', function() {
         var newColor = $(this).val();
+        if (isColorTooWhite(newColor)) {
+          newColor = '#4a5568';
+          $(this).val(newColor);
+        }
         newspaperColors[paper] = newColor;
         updateNewspaperBadgeStyles();
       });
@@ -428,9 +449,9 @@ $(window).on('load', function() {
       $(iconElem).attr('data-state', state);
       
       if (state === 1) {
-        $(iconElem).css('color', '#e53e3e'); // Red
+        $(iconElem).css('color', '#FC0C04'); // Red flag
       } else if (state === 2) {
-        $(iconElem).css('color', '#3182ce'); // Blue
+        $(iconElem).css('color', '#2D11E9'); // Blue flag
       } else {
         $(iconElem).css('color', '#cbd5e0'); // Original unpressed
       }
@@ -485,8 +506,8 @@ $(window).on('load', function() {
             var segmentIdx = i - 3;
             if (segmentIdx >= 0 && routeSegments && routeSegments[segmentIdx] && routeSegments[segmentIdx].length > 0) {
               currentRouteControl = L.polyline(routeSegments[segmentIdx], {
-                color: '#3182ce',
-                opacity: 0.8,
+                color: '#60a5fa',
+                opacity: 0.5,
                 weight: 6
               }).addTo(map);
             }

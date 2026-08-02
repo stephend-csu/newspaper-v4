@@ -241,36 +241,37 @@ h2 {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: linear-gradient(180deg, #ffffff 0%, #edf2f7 100%);
-  color: #4a5568;
-  border: 1px solid #cbd5e0;
+  background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e0 100%);
+  color: #2d3748;
+  border: 1px solid #a0aec0;
   border-radius: 30px;
-  padding: 10px 32px;
+  padding: 8px 36px;
   font-size: 1.68rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.12);
   transition: all 0.2s ease-in-out;
   margin-top: 6px;
 }
 
 .btn-next-address:hover {
-  background: #e2e8f0;
+  background: linear-gradient(180deg, #cbd5e0 0%, #a0aec0 100%);
   color: #1a202c;
+  border-color: #718096;
   transform: translateY(1px);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
 }
 
 .btn-next-address.pushed {
-  background: #e2e8f0;
-  color: #718096;
-  border-color: #cbd5e0;
+  background: #cbd5e0;
+  color: #4a5568;
+  border-color: #a0aec0;
 }
 
 .cute-triangle {
-  font-size: 1.7rem;
-  line-height: 1;
-  color: #4a5568;
+  font-size: 2.4rem;
+  line-height: 0.9;
+  color: #2d3748;
 }
 
 .not-routed-container {

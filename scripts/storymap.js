@@ -156,48 +156,6 @@ $(window).on('load', function() {
       dynamicSubtitle = runIdForTitle.charAt(0).toUpperCase() + runIdForTitle.slice(1);
     }
     document.title = "Newspaper Delivery Route";
-
-    if (metadata && metadata.upload_timestamp_pst) {
-      var pubTimeStr = metadata.upload_timestamp_pst;
-      var waitTimeStr = pubTimeStr;
-      var match = pubTimeStr.match(/(.*) (\d{1,2}):(\d{2})(?::\d{2})? (AM|PM) (PST|PDT)/);
-      if (match) {
-          var datePart = match[1]; // e.g. "Wed, Jul 29"
-          var hours = parseInt(match[2], 10);
-          var mins = parseInt(match[3], 10);
-          var ampm = match[4];
-          
-          // Reformat date part if it matches "Day, Mon DD"
-          var dateMatch = datePart.match(/([a-zA-Z]+),?\s+([a-zA-Z]+)\s+(\d+)/);
-          if (dateMatch) {
-              var dayStr = dateMatch[1];
-              if (dayStr === 'Wed') dayStr = 'Weds';
-              var monthMap = {'Jan':1,'Feb':2,'Mar':3,'Apr':4,'May':5,'Jun':6,'Jul':7,'Aug':8,'Sep':9,'Oct':10,'Nov':11,'Dec':12};
-              var monthNum = monthMap[dateMatch[2]] || dateMatch[2];
-              var dayNum = parseInt(dateMatch[3], 10);
-              datePart = dayStr + ' ' + monthNum + '/' + dayNum;
-          }
-          
-          pubTimeStr = datePart + ' at ' + hours + ':' + (mins < 10 ? '0'+mins : mins) + ' ' + ampm;
-          
-          mins += 5;
-          if (mins >= 60) {
-              mins -= 60;
-              hours += 1;
-              if (hours == 12) {
-                  ampm = (ampm === 'AM') ? 'PM' : 'AM';
-              } else if (hours > 12) {
-                  hours -= 12;
-              }
-          }
-          var minStr = mins < 10 ? '0' + mins : mins;
-          waitTimeStr = hours + ':' + minStr + ' ' + ampm;
-      }
-      var msg = 'Published at ' + pubTimeStr + '. Please wait until ' + waitTimeStr + ' for GitHub to update the map data.';
-      $('#header').append('<div class="upload-pst-header" style="font-size:0.85em; color:#d9534f; line-height:1.3; padding: 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
-    } else {
-      $('#header').append('<div class="upload-pst-header"><i class="fa fa-clock"></i> Uploaded: Recent (PST)</div>');
-    }
     
     if (runIdForTitle) {
       $('#header-action-container').html('<a href="route_image.html?id=' + encodeURIComponent(runIdForTitle) + '" target="_blank" style="font-size:0.85rem; font-weight:bold; color:#3182ce; text-decoration:none;"><i class="fas fa-map"></i> Explore route in new tab</a>');

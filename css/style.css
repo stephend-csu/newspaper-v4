@@ -140,12 +140,27 @@ a.source:visited {
 }
 
 /*
-  Active marker: Vibrant Green
+  Active marker: Vibrant Green with white glow
 */
 .marker-active {
   background-position: -396px 0 !important;
-  filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.8)) brightness(1.15) !important;
+  filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.95)) brightness(1.15) !important;
   z-index: 1000 !important;
+}
+
+/*
+  Previous marker: #cefad0 with dark legible text
+*/
+.marker-previous {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='35' height='46' viewBox='0 0 35 46'%3E%3Cpath d='M 17.5 45 C 17.5 45 2.5 27.5 2.5 17.5 A 15 15 0 0 1 32.5 17.5 C 32.5 27.5 17.5 45 17.5 45 Z' fill='%23cefad0' stroke='%236bbd71' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center top !important;
+  background-size: 35px 46px !important;
+  background-position: 0 0 !important;
+}
+
+.marker-previous i {
+  color: #1a202c !important;
+  font-weight: 700 !important;
+  margin-top: 9px !important;
 }
 
 /* Storymap logo image above the title */

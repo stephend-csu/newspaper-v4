@@ -538,15 +538,15 @@ $(window).on('load', function() {
           // Reset all marker classes to base extra-marker class logic
           markers[i]._icon.className = markers[i]._icon.className.replace(/extra-marker-circle-\w+(-(?:dark|light))?/g, '');
           markers[i]._icon.className = markers[i]._icon.className.replace(' marker-active', '');
+          markers[i]._icon.className = markers[i]._icon.className.replace(' marker-previous', '');
           markers[i]._icon.style.filter = 'none';
 
           if (i === k) {
-            // Current location: Vibrant Green
+            // Current location: Vibrant Green with white glow
             markers[i]._icon.className += ' extra-marker-circle-green marker-active';
           } else if (i === k - 1 && i >= 2) {
-            // Previous location: Light Green
-            markers[i]._icon.className += ' extra-marker-circle-green-light';
-            markers[i]._icon.style.filter = 'brightness(1.05)';
+            // Previous location: #cefad0
+            markers[i]._icon.className += ' marker-previous';
           } else {
             // Default location: Gray (instead of light blue)
             markers[i]._icon.className += ' extra-marker-circle-cyan';

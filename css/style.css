@@ -231,8 +231,8 @@ h2 {
 }
 
 .addr-num {
-  color: #718096;
-  font-weight: 700;
+  color: #a0aec0;
+  font-weight: 600;
   margin-right: 6px;
 }
 
@@ -245,7 +245,7 @@ h2 {
   color: #2d3748;
   border: 1px solid #a0aec0;
   border-radius: 30px;
-  padding: 8px 75px;
+  padding: 13px 75px;
   min-width: 190px;
   font-size: 1.68rem;
   font-weight: 700;

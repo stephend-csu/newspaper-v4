@@ -3,15 +3,15 @@ $(window).on('load', function() {
 
   const CHAPTER_ZOOM = 15;
 
-  const SEPIA_COLOR = '#704214';
+  const LIGHT_BROWN_COLOR = '#b5835a';
 
   var newspaperColors = {
     'NYT': '#4169e1', // Royal Blue
     'WSJ': '#6c757d', // Gray
-    'EBT': '#2e7d32', // Green
-    'UST': '#2e8b57', // Sea Green
+    'SFC': '#ffd700', // Gold / Yellow
     'CAP': '#dc2626', // Red
-    'SFC': '#ffd700'  // Gold / Yellow
+    'UST': '#40e0d0', // Turquoise
+    'EBT': '#2e7d32'  // Green
   };
 
   var timestamp = Date.now();
@@ -261,7 +261,7 @@ $(window).on('load', function() {
     Array.from(detectedNewspapers).forEach(paper => {
       var color = newspaperColors[paper];
       if (!color || isColorTooWhite(color)) {
-        color = SEPIA_COLOR;
+        color = LIGHT_BROWN_COLOR;
       }
       newspaperColors[paper] = color;
       
@@ -271,7 +271,7 @@ $(window).on('load', function() {
       input.on('input change', function() {
         var newColor = $(this).val();
         if (isColorTooWhite(newColor)) {
-          newColor = SEPIA_COLOR;
+          newColor = LIGHT_BROWN_COLOR;
           $(this).val(newColor);
         }
         newspaperColors[paper] = newColor;
@@ -343,6 +343,7 @@ $(window).on('load', function() {
     var currentRouteControl = null;
     var chapterCount = 0;
 
+    var totalAddresses = metadata && metadata.addresses_found ? metadata.addresses_found : chapters.length;
     for (var idx = 0; idx < chapters.length; idx++) {
       var c = chapters[idx];
       var containerIdx = idx + 2;
@@ -376,7 +377,7 @@ $(window).on('load', function() {
       var streetNameClean = cleanStreetAddress(c['Chapter']);
       var mapsUrl = c['Maps Link'] || (c['Chapter'] ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c['Chapter'])}` : '#');
 
-      var headerHtml = `<p class="chapter-header"><span class="addr-num">${addressNum}.</span><a href="${mapsUrl}" class="street-addr-link">${streetNameClean}</a></p>`;
+      var headerHtml = `<p class="chapter-header"><span class="addr-num">(${addressNum}/${totalAddresses})</span>&nbsp;&nbsp;<a href="${mapsUrl}" class="street-addr-link">${streetNameClean}</a></p>`;
       
       var papersStr = c['Newspapers'] || '';
       var paperBadgesHtml = '';
@@ -455,9 +456,9 @@ $(window).on('load', function() {
       $(iconElem).attr('data-state', state);
       
       if (state === 1) {
-        $(iconElem).css('color', '#FC0C04'); // Red flag
+        $(iconElem).css('color', '#2D11E9'); // Blue flag (1st tap)
       } else if (state === 2) {
-        $(iconElem).css('color', '#2D11E9'); // Blue flag
+        $(iconElem).css('color', '#FC0C04'); // Red flag (2nd tap)
       } else {
         $(iconElem).css('color', '#cbd5e0'); // Original unpressed
       }

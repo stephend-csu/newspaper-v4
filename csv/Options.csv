@@ -5,7 +5,7 @@ Storymap Subtitle,Delivery info<br><small>Scroll down <i class='fa fa-chevron-do
 Storymap Logo,media/cthumanities-logo.png,Path to a logo image
 Google Analytics Tracking ID,,Sample format: UA-5488840-29
 Map Settings,,"For help, see tutorial in HandsOnDataViz.org"
-Basemap Tiles,CartoDB.Voyager,"Select basemap. For Stadia tiles, add domain-based authentication."
+Basemap Tiles,CartoDB.DarkMatter,"Select basemap. For Stadia tiles, add domain-based authentication."
 Basemap Tiles API Key,,"If required, insert an API key for tiles. See Stadia note above."
 Zoom Controls,bottomright,
 Narrative Background Color,,

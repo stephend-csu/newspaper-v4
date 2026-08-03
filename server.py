@@ -147,7 +147,7 @@ def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, new
         
         # 1. Optimize route using OSRM
         is_admin = (str(run_id).lower() == 'admin')
-        route_waypoints, route_segments = optimize_road_route(confirmed_addresses, is_admin=is_admin)
+        route_waypoints, route_segments, route_stats = optimize_road_route(confirmed_addresses, is_admin=is_admin)
         
         JOB_STATUSES[job_id]['message'] = 'Generating Chapters.csv...'
         
@@ -162,6 +162,9 @@ def run_route_processing_job(job_id, confirmed_addresses, unconfirmed_count, new
             'addresses_not_found': unconfirmed_count,
             'newspaper_counts': newspaper_counts,
             'total_stops': len(route_waypoints),
+            'total_duration_seconds': route_stats.get('total_duration_seconds', 0),
+            'total_drive_time': route_stats.get('total_drive_time', ''),
+            'total_miles': route_stats.get('total_miles', 0),
             'not_routed_addresses': not_routed_addresses or [],
             'route_segments': route_segments
         }

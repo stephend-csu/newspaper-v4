@@ -15,7 +15,7 @@ def main():
     print(f"Found {len(addresses)} valid addresses, {len(problem_list)} problems.")
     
     print("Optimizing route using OSRM + OR-Tools...")
-    route_waypoints, route_segments = optimize_road_route(addresses)
+    route_waypoints, route_segments, route_stats = optimize_road_route(addresses)
     
     print("Generating CSV...")
     csv_string = generate_chapters_csv(route_waypoints)
@@ -23,7 +23,10 @@ def main():
     print("Generating metadata...")
     metadata = {
         "route_segments": route_segments,
-        "total_stops": len(route_waypoints)
+        "total_stops": len(route_waypoints),
+        "total_duration_seconds": route_stats.get("total_duration_seconds", 0),
+        "total_drive_time": route_stats.get("total_drive_time", ""),
+        "total_miles": route_stats.get("total_miles", 0)
     }
     
     # Save locally

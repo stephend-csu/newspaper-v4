@@ -152,6 +152,17 @@ def solve_tsp_ortools(address_list, time_matrix):
     else:
         return address_list
 
+def format_drive_time(seconds):
+    if not seconds:
+        return "0 min"
+    seconds = int(round(seconds))
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    if hours > 0:
+        return f"{hours} hr {minutes} min" if minutes > 0 else f"{hours} hr"
+    else:
+        return f"{max(1, minutes)} min"
+
 def optimize_road_route(confirmed_addresses, is_admin=False):
     addr_dict = {}
     
@@ -195,6 +206,9 @@ def optimize_road_route(confirmed_addresses, is_admin=False):
     # Fetch full route geometries for each leg
     route_segments = []
     chunk_size = 50
+    total_duration_seconds = 0
+    total_distance_meters = 0
+
     for i in range(0, len(route_waypoints) - 1, chunk_size - 1):
         chunk = route_waypoints[i:i + chunk_size]
         coords_str = ";".join([f"{item['lon']:.6f},{item['lat']:.6f}" for item in chunk])
@@ -207,10 +221,15 @@ def optimize_road_route(confirmed_addresses, is_admin=False):
                 if data.get('routes'):
                     legs = data['routes'][0].get('legs', [])
                     for leg_idx, leg in enumerate(legs):
-                        # Extract and set actual driving distance (OSRM distance is in meters)
+                        # Extract and set actual driving distance and duration
                         distance_meters = leg.get('distance', 0)
+                        duration_sec = leg.get('duration', 0)
+                        total_distance_meters += distance_meters
+                        total_duration_seconds += duration_sec
+
                         if i + leg_idx < len(route_waypoints):
                             route_waypoints[i + leg_idx]['miles_to_next'] = distance_meters * 0.000621371
+                            route_waypoints[i + leg_idx]['duration_to_next'] = duration_sec
                         
                         leg_coords = []
                         for step in leg.get('steps', []):
@@ -235,7 +254,14 @@ def optimize_road_route(confirmed_addresses, is_admin=False):
                 [route_waypoints[i+1]['lat'], route_waypoints[i+1]['lon']]
             ]
 
-    return route_waypoints, route_segments
+    total_miles = round(total_distance_meters * 0.000621371, 1)
+    route_stats = {
+        'total_duration_seconds': int(round(total_duration_seconds)),
+        'total_drive_time': format_drive_time(total_duration_seconds),
+        'total_miles': total_miles
+    }
+
+    return route_waypoints, route_segments, route_stats
 
 def generate_chapters_csv(route_waypoints):
     fieldnames = [

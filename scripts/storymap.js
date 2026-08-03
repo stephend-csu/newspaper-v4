@@ -314,7 +314,7 @@ $(window).on('load', function() {
 
     var statsCard = $('<div class="special-card-container" style="text-align: center; font-weight: bold; font-size: 1.1em; padding: 15px;"></div>');
     var foundCount = metadata ? metadata.addresses_found : chapters.length;
-    statsCard.append('<div style="margin-bottom: 6px;">Route for ' + foundCount + ' addresses</div>');
+    statsCard.append('<div style="margin-bottom: 6px;">' + foundCount + ' addresses</div>');
     
     if (metadata && (metadata.total_drive_time || metadata.total_miles)) {
       var timeStr = metadata.total_drive_time || '';
@@ -325,9 +325,9 @@ $(window).on('load', function() {
       }
     }
     
-    var countsHtml = '<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">';
+    var countsHtml = '<div style="font-weight: 500; font-size: 0.95em; color: #4a5568; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">';
     sortedPapers.forEach(function(p) {
-      countsHtml += '<span class="np-badge np-badge-' + p.toLowerCase() + '" style="font-size: 0.9em; padding: 4px 8px;">' + p + ': ' + paperCounts[p] + '</span>';
+      countsHtml += '<span>' + p + ': ' + paperCounts[p] + '</span>';
     });
     countsHtml += '</div>';
     statsCard.append(countsHtml);

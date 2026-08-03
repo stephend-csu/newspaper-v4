@@ -3,15 +3,15 @@ $(window).on('load', function() {
 
   const CHAPTER_ZOOM = 15;
 
+  const SEPIA_COLOR = '#704214';
+
   var newspaperColors = {
-    'EBT': '#ff0000',
-    'WSJ': '#6c757d',
-    'CAP': '#00bfff',
-    'NYT': '#0000ff',
-    'SFC': '#ffd700',
-    'UST': '#00cc00',
-    'WLD': '#cc00ff',
-    'STD': '#ff3300'
+    'NYT': '#4169e1', // Royal Blue
+    'WSJ': '#6c757d', // Gray
+    'EBT': '#2e7d32', // Green
+    'UST': '#2e8b57', // Sea Green
+    'CAP': '#dc2626', // Red
+    'SFC': '#ffd700'  // Gold / Yellow
   };
 
   var timestamp = Date.now();
@@ -158,7 +158,7 @@ $(window).on('load', function() {
     document.title = "Newspaper Delivery Route";
     
     if (runIdForTitle && runIdForTitle.toLowerCase() === 'admin') {
-      var noteStr = '<br><span style="font-size:0.88em; opacity:0.9;">Note: GitHub\'s CDN cache expires in 5 minutes, and browser cache is disabled.</span>';
+      var noteStr = ' Note: GitHub\'s CDN cache expires in 5 minutes, and browser cache is disabled.';
       if (metadata && metadata.upload_timestamp_pst) {
         var pubTimeStr = metadata.upload_timestamp_pst;
         var waitTimeStr = pubTimeStr;
@@ -196,10 +196,10 @@ $(window).on('load', function() {
             waitTimeStr = hours + ':' + minStr + ' ' + ampm;
         }
         var msg = 'Published at ' + pubTimeStr + '. Please wait until ' + waitTimeStr + ' for GitHub to update the map data.' + noteStr;
-        $('#header').append('<div class="upload-pst-header" style="font-size:0.85em; color:#d9534f; line-height:1.4; padding: 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
+        $('#header').append('<div class="upload-pst-header" style="font-size:0.75rem; color:#d9534f; line-height:1.3; padding: 2px 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
       } else {
         var msg = 'Please wait up to 5 minutes for GitHub to update the map data.' + noteStr;
-        $('#header').append('<div class="upload-pst-header" style="font-size:0.85em; color:#d9534f; line-height:1.4; padding: 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
+        $('#header').append('<div class="upload-pst-header" style="font-size:0.75rem; color:#d9534f; line-height:1.3; padding: 2px 4px;"><i class="fa fa-exclamation-triangle"></i> ' + msg + '</div>');
       }
     }
     
@@ -258,13 +258,10 @@ $(window).on('load', function() {
     pickerCard.append('<div class="card-title"><i class="fa fa-palette"></i> Newspaper Color</div>');
     var pickerGrid = $('<div class="color-picker-grid"></div>');
 
-    var fallbackPalette = ['#e53e3e', '#3182ce', '#38a169', '#d69e2e', '#805ad5', '#dd6b20', '#319795'];
-    var fallbackIdx = 0;
     Array.from(detectedNewspapers).forEach(paper => {
       var color = newspaperColors[paper];
       if (!color || isColorTooWhite(color)) {
-        color = fallbackPalette[fallbackIdx % fallbackPalette.length];
-        fallbackIdx++;
+        color = SEPIA_COLOR;
       }
       newspaperColors[paper] = color;
       
@@ -274,7 +271,7 @@ $(window).on('load', function() {
       input.on('input change', function() {
         var newColor = $(this).val();
         if (isColorTooWhite(newColor)) {
-          newColor = '#4a5568';
+          newColor = SEPIA_COLOR;
           $(this).val(newColor);
         }
         newspaperColors[paper] = newColor;

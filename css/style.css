@@ -140,11 +140,12 @@ a.source:visited {
 }
 
 /*
-  By default, current (active) marker is orange.
-  If you want to change the color, see options here: https://github.com/coryasilva/Leaflet.ExtraMarkers/blob/master/src/assets/css/leaflet.extra-markers.css
+  Active marker: Vibrant Green
 */
 .marker-active {
-  background-position: -72px 0 !important;
+  background-position: -396px 0 !important;
+  filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.8)) brightness(1.15) !important;
+  z-index: 1000 !important;
 }
 
 /* Storymap logo image above the title */

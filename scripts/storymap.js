@@ -537,21 +537,20 @@ $(window).on('load', function() {
         if (markers[i] && markers[i]._icon) {
           // Reset all marker classes to base extra-marker class logic
           markers[i]._icon.className = markers[i]._icon.className.replace(/extra-marker-circle-\w+(-(?:dark|light))?/g, '');
-          markers[i]._icon.style.filter = 'none'; // reset filter
-          
-          var targetColor = 'cyan';
-          if (i === 0) targetColor = 'green'; // Start location
-          else if (i === k) targetColor = 'orange'; // Current location
-          else if (i === k - 1 && i > 0) {
-            targetColor = 'cyan'; // Base color for previous
-            markers[i]._icon.style.filter = 'grayscale(100%) opacity(0.6)'; // Make it actually gray
-          }
-          
-          markers[i]._icon.className += ' extra-marker-circle-' + targetColor;
-          
           markers[i]._icon.className = markers[i]._icon.className.replace(' marker-active', '');
-          if (i == k) {
-            markers[i]._icon.className += ' marker-active';
+          markers[i]._icon.style.filter = 'none';
+
+          if (i === k) {
+            // Current location: Vibrant Green
+            markers[i]._icon.className += ' extra-marker-circle-green marker-active';
+          } else if (i === k - 1 && i >= 2) {
+            // Previous location: Light Green
+            markers[i]._icon.className += ' extra-marker-circle-green-light';
+            markers[i]._icon.style.filter = 'brightness(1.05)';
+          } else {
+            // Default location: Gray (instead of light blue)
+            markers[i]._icon.className += ' extra-marker-circle-cyan';
+            markers[i]._icon.style.filter = 'grayscale(100%) opacity(0.65)';
           }
         }
       }
@@ -596,6 +595,7 @@ $(window).on('load', function() {
     if (bounds.length) {
       map.fitBounds(bounds);
     }
+    markActiveColor(0);
 
     $('#map, #narration, #title').css('visibility', 'visible');
     $('div.loader').css('visibility', 'hidden');
